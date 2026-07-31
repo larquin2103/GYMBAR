@@ -11,26 +11,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: 'var(--color-bg)',
-        surface: 'var(--color-surface)',
-        border: 'var(--color-border)',
+        bg: 'rgb(var(--color-bg) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        border: 'rgb(var(--color-border) / <alpha-value>)',
         content: {
-          DEFAULT: 'var(--color-text)',
-          muted: 'var(--color-text-muted)',
+          DEFAULT: 'rgb(var(--color-text) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
         },
         primary: {
-          DEFAULT: 'var(--color-primary)',
-          hover: 'var(--color-primary-hover)',
-          soft: 'var(--color-primary-soft)',
-          contrast: 'var(--color-primary-contrast)',
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
+          hover: 'rgb(var(--color-primary-hover) / <alpha-value>)',
+          soft: 'rgb(var(--color-primary-soft) / <alpha-value>)',
+          contrast: 'rgb(var(--color-primary-contrast) / <alpha-value>)',
         },
         state: {
-          active: 'var(--state-active)',
-          expired: 'var(--state-expired)',
-          blocked: 'var(--state-blocked)',
-          pending: 'var(--state-pending)',
-          frozen: 'var(--state-frozen)',
-          cancel: 'var(--state-cancel)',
+          active: 'rgb(var(--state-active) / <alpha-value>)',
+          expired: 'rgb(var(--state-expired) / <alpha-value>)',
+          blocked: 'rgb(var(--state-blocked) / <alpha-value>)',
+          pending: 'rgb(var(--state-pending) / <alpha-value>)',
+          frozen: 'rgb(var(--state-frozen) / <alpha-value>)',
+          cancel: 'rgb(var(--state-cancel) / <alpha-value>)',
         },
       },
       borderRadius: {

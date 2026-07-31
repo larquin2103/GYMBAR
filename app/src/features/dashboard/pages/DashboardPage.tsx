@@ -37,14 +37,16 @@ export default function DashboardPage() {
               <CalendarClock className="h-4 w-4 text-content-muted" />
               Asistencia semanal
             </div>
-            <div className="mt-6 flex h-40 items-end gap-3">
+            <div className="mt-6 flex h-40 gap-3">
               {[40, 65, 52, 78, 90, 60, 30].map((h, i) => (
-                <div key={i} className="flex flex-1 flex-col items-center gap-2">
-                  <div
-                    className="w-full rounded-t bg-primary-soft"
-                    style={{ height: `${h}%` }}
-                    aria-hidden
-                  />
+                <div key={i} className="flex h-full flex-1 flex-col items-center gap-2">
+                  <div className="flex w-full flex-1 items-end">
+                    <div
+                      className="w-full rounded-t bg-primary/70"
+                      style={{ height: `${h}%` }}
+                      aria-hidden
+                    />
+                  </div>
                   <span className="text-xs text-content-muted">
                     {['L', 'M', 'M', 'J', 'V', 'S', 'D'][i]}
                   </span>
