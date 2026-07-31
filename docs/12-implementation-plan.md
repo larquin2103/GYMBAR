@@ -17,7 +17,7 @@ comenzar el desarrollo"). Este documento es el contrato de avance.
 - Tooling: TypeScript estricto, ESLint, Prettier, Vitest, Playwright, Husky.
 - Tailwind + tokens del design system (doc 07) + modo claro/oscuro.
 - Design system base: `Button, Input, Sheet, Dialog, Toast, Badge, Table,
-  Skeleton, EmptyState, CommandPalette, PageHeader`.
+Skeleton, EmptyState, CommandPalette, PageHeader`.
 - Shell de la app: layout, sidebar, router (rutas vacías), command palette,
   indicador de conectividad.
 - Firebase: init del SDK, Emulator Suite, `firebase.json`, esqueleto de Rules +
@@ -71,14 +71,14 @@ of Done del doc 01.
 
 ## Estimación indicativa
 
-| Fase | Alcance | Duración indicativa |
-|---|---|---|
-| 0 | Fundaciones | ~1 semana |
-| 1 | Identidad + clientes | ~2 semanas |
-| 2 | Núcleo operativo (MVP) | ~2-3 semanas |
-| 3 | Retención + reportes | ~2 semanas |
-| 4 | Coaching + stock | ~2-3 semanas |
-| 5 | Escala | continuo |
+| Fase | Alcance                | Duración indicativa |
+| ---- | ---------------------- | ------------------- |
+| 0    | Fundaciones            | ~1 semana           |
+| 1    | Identidad + clientes   | ~2 semanas          |
+| 2    | Núcleo operativo (MVP) | ~2-3 semanas        |
+| 3    | Retención + reportes   | ~2 semanas          |
+| 4    | Coaching + stock       | ~2-3 semanas        |
+| 5    | Escala                 | continuo            |
 
 > Las estimaciones son de referencia para 1 desarrollador senior full-stack;
 > escalan con el equipo. La prioridad declarada del brief es **calidad > cantidad

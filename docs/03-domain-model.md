@@ -74,13 +74,13 @@ stateDiagram-v2
 Estados visuales derivados (para UI, doc 07): `active`, `expired`, `pending`,
 `frozen`, `cancelled`. El **acceso** (check-in) se decide así:
 
-| Estado membresía | ¿Registrar entrada? | Etiqueta UI |
-|---|---|---|
-| active (al día) | Sí, verde | "Acceso permitido" |
-| active con pago pendiente | Sí, con aviso | "Pago pendiente" |
-| expired | Sí pero marcado | "Vencido — renovar" |
-| frozen | No por defecto (config) | "Congelada" |
-| cancelled | No | "Sin membresía" |
+| Estado membresía          | ¿Registrar entrada?     | Etiqueta UI         |
+| ------------------------- | ----------------------- | ------------------- |
+| active (al día)           | Sí, verde               | "Acceso permitido"  |
+| active con pago pendiente | Sí, con aviso           | "Pago pendiente"    |
+| expired                   | Sí pero marcado         | "Vencido — renovar" |
+| frozen                    | No por defecto (config) | "Congelada"         |
+| cancelled                 | No                      | "Sin membresía"     |
 
 > Decisión no complaciente: el check-in **registra siempre** el intento (dato
 > valioso) y **decide el acceso por política configurable**, en vez de bloquear

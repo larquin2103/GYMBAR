@@ -24,6 +24,7 @@ genera pago + movimiento de caja").
 
 **Firestore Rules (integración — obligatorio).** Con `@firebase/rules-unit-testing`
 contra el emulador. Casos mínimos que **deben** pasar en CI:
+
 - Un usuario de `orgA` **no** puede leer/escribir datos de `orgB` (aislamiento).
 - Un recepcionista **no** puede anular pagos ni cerrar caja desde el cliente.
 - Un pago **no** se puede editar ni borrar desde el cliente.
@@ -38,6 +39,7 @@ estados de carga (skeleton), empty states, y flujos de sheet.
 
 **E2E (pocas, las críticas del negocio).** Playwright (Chromium ya disponible en
 el entorno):
+
 1. Check-in completo en < 10 s (incluido camino offline simulado).
 2. Alta de cliente → asignar plan → cobrar → recibo.
 3. Apertura y cierre de caja que cuadra.
@@ -46,9 +48,11 @@ el entorno):
 ## 3. Calidad continua (CI)
 
 Pipeline en cada PR:
+
 ```
 lint → typecheck → unit → rules-tests (emulador) → functions-tests → build → e2e (smoke)
 ```
+
 Merge a `main` bloqueado si algo falla. Deploy a staging automático tras verde.
 
 ## 4. Presupuestos y gates

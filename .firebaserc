@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "gymbar-dev",
+    "staging": "gymbar-staging",
+    "prod": "gymbar-prod"
+  }
+}

@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Storage aislado por organización. Fotos de clientes y recibos viven bajo
+// /{orgId}/... y solo el staff del mismo tenant accede (ver docs/05).
+service firebase.storage {
+  match /b/{bucket}/o {
+    function inOrg(oid) {
+      return request.auth != null && request.auth.token.orgId == oid;
+    }
+    function isStaff() {
+      return request.auth != null &&
+        (request.auth.token.role == 'admin' ||
+         request.auth.token.role == 'reception' ||
+         request.auth.token.role == 'trainer');
+    }
+    function isImage() {
+      return request.resource.contentType.matches('image/.*') &&
+        request.resource.size < 5 * 1024 * 1024;
+    }
+
+    match /{orgId}/members/{memberId}/{fileName} {
+      allow read:  if inOrg(orgId) && isStaff();
+      allow write: if inOrg(orgId) && isStaff() && isImage();
+    }
+
+    match /{orgId}/receipts/{fileName} {
+      allow read:  if inOrg(orgId) && isStaff();
+      allow write: if false; // los genera una Cloud Function
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

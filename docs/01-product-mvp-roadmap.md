@@ -15,15 +15,15 @@ avanzados) puede llegar después sin bloquear la adopción.
 
 Alcance mínimo para que un gimnasio real **reemplace su sistema actual**:
 
-| Módulo | Alcance MVP | Justificación |
-|---|---|---|
-| **Auth + Multi-tenant** | Login, roles (Admin/Recepción), aislamiento por org | Sin esto no hay producto vendible |
-| **Clientes** | Alta, ficha, búsqueda instantánea, foto, estado | Núcleo del dato |
-| **Membresías** | Planes (mensual/semanal/diaria/anual), asignar, vencimiento | Sin membresía no hay negocio |
-| **Check-in** | Búsqueda (nombre/tel/código/QR) + validación + registro **offline** | La función crítica |
-| **Pagos** | Registrar pago, método, recibo, historial | Sin esto no cobran |
-| **Caja** | Apertura/cierre, ingresos/egresos, resumen del día | Cierre diario = confianza |
-| **Dashboard** | 6-7 indicadores accionables | Da sentido de control |
+| Módulo                  | Alcance MVP                                                         | Justificación                     |
+| ----------------------- | ------------------------------------------------------------------- | --------------------------------- |
+| **Auth + Multi-tenant** | Login, roles (Admin/Recepción), aislamiento por org                 | Sin esto no hay producto vendible |
+| **Clientes**            | Alta, ficha, búsqueda instantánea, foto, estado                     | Núcleo del dato                   |
+| **Membresías**          | Planes (mensual/semanal/diaria/anual), asignar, vencimiento         | Sin membresía no hay negocio      |
+| **Check-in**            | Búsqueda (nombre/tel/código/QR) + validación + registro **offline** | La función crítica                |
+| **Pagos**               | Registrar pago, método, recibo, historial                           | Sin esto no cobran                |
+| **Caja**                | Apertura/cierre, ingresos/egresos, resumen del día                  | Cierre diario = confianza         |
+| **Dashboard**           | 6-7 indicadores accionables                                         | Da sentido de control             |
 
 Fuera del MVP explícitamente: rutinas, medidas, inventario/productos avanzados,
 reportes exportables complejos, notificaciones push, renovación automática,

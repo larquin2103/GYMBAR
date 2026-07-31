@@ -22,47 +22,47 @@ permite modo claro/oscuro sin duplicar clases y mantener consistencia.
 ```css
 :root {
   /* Neutrales (escala fría, base de toda la UI) */
-  --color-bg:        #ffffff;
-  --color-surface:   #f8fafc;   /* slate-50 */
-  --color-border:    #e2e8f0;   /* slate-200 */
-  --color-text:      #0f172a;   /* slate-900 */
-  --color-text-muted:#64748b;   /* slate-500 */
+  --color-bg: #ffffff;
+  --color-surface: #f8fafc; /* slate-50 */
+  --color-border: #e2e8f0; /* slate-200 */
+  --color-text: #0f172a; /* slate-900 */
+  --color-text-muted: #64748b; /* slate-500 */
 
   /* Primario consistente (indigo desaturado, confiable, no chillón) */
-  --color-primary:      #4f46e5;   /* indigo-600 */
-  --color-primary-hover:#4338ca;   /* indigo-700 */
-  --color-primary-soft: #eef2ff;   /* indigo-50  */
+  --color-primary: #4f46e5; /* indigo-600 */
+  --color-primary-hover: #4338ca; /* indigo-700 */
+  --color-primary-soft: #eef2ff; /* indigo-50  */
 
   /* Estados de negocio (mapa canónico) */
-  --state-active:  #16a34a;   /* verde  - activo / pagado */
-  --state-expired: #dc2626;   /* rojo   - vencido */
-  --state-blocked: #b91c1c;   /* rojo oscuro - bloqueado */
-  --state-pending: #d97706;   /* ámbar  - pendiente */
-  --state-frozen:  #0891b2;   /* cyan   - congelado */
-  --state-cancel:  #64748b;   /* gris   - cancelado */
+  --state-active: #16a34a; /* verde  - activo / pagado */
+  --state-expired: #dc2626; /* rojo   - vencido */
+  --state-blocked: #b91c1c; /* rojo oscuro - bloqueado */
+  --state-pending: #d97706; /* ámbar  - pendiente */
+  --state-frozen: #0891b2; /* cyan   - congelado */
+  --state-cancel: #64748b; /* gris   - cancelado */
 }
 
-:root[data-theme="dark"] {
-  --color-bg:        #0b0f17;
-  --color-surface:   #111827;
-  --color-border:    #1f2937;
-  --color-text:      #f1f5f9;
-  --color-text-muted:#94a3b8;
-  --color-primary-soft:#1e1b4b;
+:root[data-theme='dark'] {
+  --color-bg: #0b0f17;
+  --color-surface: #111827;
+  --color-border: #1f2937;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-primary-soft: #1e1b4b;
   /* Los estados mantienen su tono; se ajusta luminosidad para contraste AA */
 }
 ```
 
 **Mapa canónico de estados** (usado en todo el producto, sin excepción):
 
-| Estado | Color | Uso |
-|---|---|---|
-| activo / pagado | verde | membresía vigente, pago confirmado |
-| vencido | rojo | membresía expirada |
-| bloqueado | rojo oscuro | acceso denegado |
-| pendiente | ámbar | pago pendiente, membresía sin pagar |
-| congelado | cyan | membresía en freeze |
-| cancelado | gris | baja |
+| Estado          | Color       | Uso                                 |
+| --------------- | ----------- | ----------------------------------- |
+| activo / pagado | verde       | membresía vigente, pago confirmado  |
+| vencido         | rojo        | membresía expirada                  |
+| bloqueado       | rojo oscuro | acceso denegado                     |
+| pendiente       | ámbar       | pago pendiente, membresía sin pagar |
+| congelado       | cyan        | membresía en freeze                 |
+| cancelado       | gris        | baja                                |
 
 ### Tipografía
 

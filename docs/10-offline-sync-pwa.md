@@ -9,14 +9,14 @@
 > duplicados y pérdida de confianza contable. Esta es una decisión deliberada y
 > **no negociable** por conveniencia.
 
-| Operación | Offline | Estrategia |
-|---|:---:|---|
-| **Check-in / asistencia** | ✔ Sí | Núcleo offline. Optimista + cola de sincronización. |
-| Leer clientes / membresías / ficha | ✔ Sí | Persistencia local de Firestore (caché). |
-| Buscar cliente | ✔ Sí | Búsqueda sobre datos cacheados. |
-| **Registrar pago** | ✖ No* | Requiere conexión. Si no hay red → cola explícita "pendiente de cobro" visible, nunca silenciosa. |
-| **Abrir/cerrar caja** | ✖ No | Operación server-side (Function). Requiere conexión. |
-| Cambios de rol / config | ✖ No | Sensible, online. |
+| Operación                          | Offline | Estrategia                                                                                        |
+| ---------------------------------- | :-----: | ------------------------------------------------------------------------------------------------- |
+| **Check-in / asistencia**          |  ✔ Sí   | Núcleo offline. Optimista + cola de sincronización.                                               |
+| Leer clientes / membresías / ficha |  ✔ Sí   | Persistencia local de Firestore (caché).                                                          |
+| Buscar cliente                     |  ✔ Sí   | Búsqueda sobre datos cacheados.                                                                   |
+| **Registrar pago**                 |  ✖ No*  | Requiere conexión. Si no hay red → cola explícita "pendiente de cobro" visible, nunca silenciosa. |
+| **Abrir/cerrar caja**              |  ✖ No   | Operación server-side (Function). Requiere conexión.                                              |
+| Cambios de rol / config            |  ✖ No   | Sensible, online.                                                                                 |
 
 \* Si el gimnasio pierde red durante un cobro, la UI lo deja **explícitamente
 pendiente** y bloquea el cierre de caja hasta reconciliar. Transparencia total,
@@ -51,7 +51,7 @@ cero cobros "fantasma".
 ## 5. PWA instalable
 
 - `manifest.webmanifest`: nombre, iconos (maskable incluidos), `display:
-  standalone`, `theme_color`, orientación, atajos (shortcuts) a Check-in y Nuevo
+standalone`, `theme_color`, orientación, atajos (shortcuts) a Check-in y Nuevo
   cliente.
 - Instalable y verificada en: **Android** (Chrome), **Windows/Mac/Linux**
   (Chrome/Edge instalable), **tablets**. iOS Safari: soporte con las

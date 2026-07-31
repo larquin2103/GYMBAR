@@ -24,6 +24,7 @@
 ```
 
 **Por qué subcolecciones y no un campo `tenantId` en colecciones planas:**
+
 - La ruta **contiene** el `orgId` → las Rules validan aislamiento con una sola
   comparación (`orgId == token.orgId`), sin depender de un campo que se puede
   falsear.
@@ -40,25 +41,28 @@
 ## 2. Esquemas de documento (campos principales)
 
 ### `members/{memberId}`
+
 ```ts
 {
   id: string;
-  code: string;              // código corto legible (búsqueda/QR)
+  code: string; // código corto legible (búsqueda/QR)
   firstName: string;
   lastName: string;
-  searchName: string;        // "juan perez" normalizado (lowercase, sin acentos)
-  phone: string | null;      // E.164 normalizado
+  searchName: string; // "juan perez" normalizado (lowercase, sin acentos)
+  phone: string | null; // E.164 normalizado
   email: string | null;
   photoUrl: string | null;
   notes: string | null;
   // --- desnormalización justificada (evita N lecturas en la lista/ficha) ---
-  status: 'active'|'expired'|'pending'|'frozen'|'cancelled'; // derivado, mantenido por CF
+  status: 'active' | 'expired' | 'pending' | 'frozen' | 'cancelled'; // derivado, mantenido por CF
   currentMembershipId: string | null;
-  membershipEndDate: Timestamp | null;   // para pintar "próximo vencimiento" sin join
+  membershipEndDate: Timestamp | null; // para pintar "próximo vencimiento" sin join
   lastCheckInAt: Timestamp | null;
-  createdAt: Timestamp; updatedAt: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 ```
+
 > **Justificación de la desnormalización:** la lista de clientes y el check-in
 > necesitan mostrar estado y vencimiento **sin** leer la subcolección de
 > membresías por cada fila. `status`, `currentMembershipId`, `membershipEndDate`
@@ -67,23 +71,27 @@
 > estos campos son caché consistente.
 
 ### `plans/{planId}`
+
 ```ts
 { id, name, type: 'daily'|'weekly'|'biweekly'|'monthly'|'annual'|'promo',
   priceCents: number, currency: string, durationDays: number,
   isActive: boolean, allowsFreeze: boolean, createdAt, updatedAt }
 ```
 
-### `memberships/{membershipId}`  — fuente de verdad de vigencia
+### `memberships/{membershipId}` — fuente de verdad de vigencia
+
 ```ts
 { id, memberId, planId, planNameSnapshot: string, priceCentsSnapshot: number,
   status: 'pending'|'active'|'frozen'|'expired'|'cancelled',
   startDate: Timestamp, endDate: Timestamp,
   frozenDays: number, createdBy: uid, createdAt, updatedAt }
 ```
+
 > `planNameSnapshot`/`priceCentsSnapshot`: se congela el nombre y precio del plan
 > al momento de venta (el plan puede cambiar de precio después; el histórico no debe mutar).
 
-### `payments/{paymentId}`  — inmutable
+### `payments/{paymentId}` — inmutable
+
 ```ts
 { id, memberId, membershipId: string|null, amountCents: number, currency: string,
   method: 'cash'|'card'|'transfer'|'other',
@@ -91,7 +99,8 @@
   receiptNumber: string, createdAt: Timestamp }  // sin updatedAt: inmutable
 ```
 
-### `checkins/{checkinId}`  — alto volumen (1M+)
+### `checkins/{checkinId}` — alto volumen (1M+)
+
 ```ts
 { id, memberId, memberNameSnapshot: string,
   result: 'allowed'|'expired'|'pending_payment'|'denied',
@@ -101,6 +110,7 @@
 ```
 
 ### `cashSessions/{sessionId}` + `movements/{movementId}`
+
 ```ts
 // session
 { id, status: 'open'|'closed', openedBy: uid, openedAt, openingFloatCents,
@@ -111,7 +121,8 @@
   reason: string, paymentId: string|null, staffUid: uid, createdAt }
 ```
 
-### `counters/{counterId}`  — rollups precomputados (clave para el costo)
+### `counters/{counterId}` — rollups precomputados (clave para el costo)
+
 ```ts
 // ej. counters/stats-2026-07  (mensual) y counters/daily-2026-07-31
 { activeMembers: number, expiredMembers: number,
@@ -138,14 +149,14 @@
 
 ## 4. Índices compuestos previstos (borrador)
 
-| Colección | Campos | Uso |
-|---|---|---|
-| members | `status ASC, membershipEndDate ASC` | "vencidos", "por vencer" |
-| members | `searchName ASC` | búsqueda por nombre |
-| checkins | `dateKey DESC, createdAt DESC` | entradas del día |
-| checkins | `memberId ASC, createdAt DESC` | historial del cliente |
-| payments | `cashSessionId ASC, createdAt ASC` | cuadre de caja |
-| memberships | `memberId ASC, endDate DESC` | membresía vigente |
+| Colección   | Campos                              | Uso                      |
+| ----------- | ----------------------------------- | ------------------------ |
+| members     | `status ASC, membershipEndDate ASC` | "vencidos", "por vencer" |
+| members     | `searchName ASC`                    | búsqueda por nombre      |
+| checkins    | `dateKey DESC, createdAt DESC`      | entradas del día         |
+| checkins    | `memberId ASC, createdAt DESC`      | historial del cliente    |
+| payments    | `cashSessionId ASC, createdAt ASC`  | cuadre de caja           |
+| memberships | `memberId ASC, endDate DESC`        | membresía vigente        |
 
 ## 5. Límites conocidos y mitigación
 

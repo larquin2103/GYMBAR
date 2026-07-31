@@ -71,7 +71,9 @@ export interface MemberRepository {
 }
 
 // data/member/member.firestore.repository.ts  (detalle)
-export class FirestoreMemberRepository implements MemberRepository { /* ... */ }
+export class FirestoreMemberRepository implements MemberRepository {
+  /* ... */
+}
 
 // features/members/api/useMembers.ts  (estado de servidor)
 export function useMembers(query: MemberQuery) {

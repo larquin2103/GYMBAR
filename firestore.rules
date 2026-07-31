@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// Aislamiento multi-tenant estructural (ver docs/04 y docs/05).
+// Todo dato vive bajo /organizations/{orgId}; el acceso se decide comparando el
+// orgId de la ruta contra el claim del token. Nunca se confía en el cliente.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function orgId()       { return request.auth.token.orgId; }
+    function role()        { return request.auth.token.role; }
+    function inOrg(oid)    { return isSignedIn() && orgId() == oid; }
+    function isAdmin()     { return isSignedIn() && role() == 'admin'; }
+    function isReception() { return isSignedIn() && (role() == 'reception' || role() == 'admin'); }
+    function isStaff()     { return isSignedIn() && (role() == 'admin' || role() == 'reception' || role() == 'trainer'); }
+
+    // Índice global uid -> organización. Solo el propio usuario lo lee.
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false; // gestionado por Cloud Functions
+    }
+
+    match /organizations/{oid} {
+      allow read:  if inOrg(oid);
+      allow write: if inOrg(oid) && isAdmin();
+
+      match /members/{id} {
+        allow read:           if inOrg(oid) && isStaff();
+        allow create, update: if inOrg(oid) && isReception();
+        allow delete:         if inOrg(oid) && isAdmin();
+      }
+
+      match /plans/{id} {
+        allow read:  if inOrg(oid) && isStaff();
+        allow write: if inOrg(oid) && isAdmin();
+      }
+
+      match /memberships/{id} {
+        allow read:           if inOrg(oid) && isStaff();
+        allow create, update: if inOrg(oid) && isReception();
+        allow delete:         if false;
+      }
+
+      // Pagos: inmutables desde el cliente. Anulaciones vía Cloud Function.
+      match /payments/{id} {
+        allow read:   if inOrg(oid) && isReception();
+        allow create: if inOrg(oid) && isReception();
+        allow update, delete: if false;
+      }
+
+      // Check-ins: append-only. Nunca se editan ni borran.
+      match /checkins/{id} {
+        allow read:   if inOrg(oid) && isStaff();
+        allow create: if inOrg(oid) && isStaff();
+        allow update, delete: if false;
+      }
+
+      // Caja: apertura desde cliente; el cierre (totales) es server-side.
+      match /cashSessions/{id} {
+        allow read:   if inOrg(oid) && isReception();
+        allow create: if inOrg(oid) && isReception();
+        allow update: if false; // closeCashSession (Cloud Function)
+
+        match /movements/{mid} {
+          allow read:   if inOrg(oid) && isReception();
+          allow create: if inOrg(oid) && isReception();
+          allow update, delete: if false;
+        }
+      }
+
+      // Contadores/rollups: solo lectura para staff; los escribe Cloud Functions.
+      match /counters/{id} {
+        allow read:  if inOrg(oid) && isStaff();
+        allow write: if false;
+      }
+
+      // Sin catch-all recursivo a propósito: en Firestore las reglas se combinan
+      // con OR, así que un comodín permisivo anularía las restricciones de arriba
+      // (pagos inmutables, cierre de caja server-side). Deny-by-default. Cada
+      // colección nueva (products, routines, measurements, inventory) declara su
+      // propia regla explícita en su fase (ver docs/12).
+    }
+  }
+}

@@ -18,23 +18,23 @@
 
 ## 2. Matriz de permisos
 
-| Recurso / Acción | Admin | Recepcionista | Entrenador | Cliente (futuro) |
-|---|:---:|:---:|:---:|:---:|
-| Ver dashboard | ✔ | ✔ (operativo) | parcial | — |
-| Clientes: ver | ✔ | ✔ | ✔ (asignados) | propio |
-| Clientes: crear/editar | ✔ | ✔ | — | — |
-| Clientes: eliminar | ✔ | — | — | — |
-| Membresías: gestionar | ✔ | ✔ | — | ver propia |
-| Pagos: registrar | ✔ | ✔ | — | ver propios |
-| Pagos: anular/ajustar | ✔ | — | — | — |
-| Caja: abrir/cerrar | ✔ | ✔ | — | — |
-| Caja: ver histórico | ✔ | turno propio | — | — |
-| Check-in | ✔ | ✔ | ✔ | auto (futuro) |
-| Rutinas | ✔ | — | ✔ | ver propia |
-| Medidas | ✔ | ✔ | ✔ | ver propias |
-| Inventario/Productos | ✔ | vender | — | — |
-| Reportes | ✔ | operativos | — | — |
-| Usuarios/Config | ✔ | — | — | — |
+| Recurso / Acción       | Admin | Recepcionista |  Entrenador   | Cliente (futuro) |
+| ---------------------- | :---: | :-----------: | :-----------: | :--------------: |
+| Ver dashboard          |   ✔   | ✔ (operativo) |    parcial    |        —         |
+| Clientes: ver          |   ✔   |       ✔       | ✔ (asignados) |      propio      |
+| Clientes: crear/editar |   ✔   |       ✔       |       —       |        —         |
+| Clientes: eliminar     |   ✔   |       —       |       —       |        —         |
+| Membresías: gestionar  |   ✔   |       ✔       |       —       |    ver propia    |
+| Pagos: registrar       |   ✔   |       ✔       |       —       |   ver propios    |
+| Pagos: anular/ajustar  |   ✔   |       —       |       —       |        —         |
+| Caja: abrir/cerrar     |   ✔   |       ✔       |       —       |        —         |
+| Caja: ver histórico    |   ✔   | turno propio  |       —       |        —         |
+| Check-in               |   ✔   |       ✔       |       ✔       |  auto (futuro)   |
+| Rutinas                |   ✔   |       —       |       ✔       |    ver propia    |
+| Medidas                |   ✔   |       ✔       |       ✔       |   ver propias    |
+| Inventario/Productos   |   ✔   |    vender     |       —       |        —         |
+| Reportes               |   ✔   |  operativos   |       —       |        —         |
+| Usuarios/Config        |   ✔   |       —       |       —       |        —         |
 
 Regla: **el rol se evalúa en el servidor** (Rules + claim). La UI solo **oculta**
 lo que el rol no puede hacer (comodidad), pero la seguridad real está en Rules.
@@ -91,6 +91,7 @@ service cloud.firestore {
   }
 }
 ```
+
 > `incomingMemberIsValid()` / `paymentIsValid()` validan tipos, enums y que
 > `organizationId`/montos no puedan falsearse. Estas funciones se testean en CI.
 

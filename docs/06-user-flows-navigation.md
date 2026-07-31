@@ -22,6 +22,7 @@ flowchart TD
 ```
 
 Claves de diseño:
+
 - El campo de búsqueda tiene **foco por defecto** al abrir la pantalla; el
   recepcionista escribe sin tocar el mouse.
 - La validación es **local** (los datos del member ya están en caché offline),
@@ -113,6 +114,7 @@ principal: buscar cliente y disparar acciones desde cualquier pantalla.
 ## 7. Jerarquía de cada pantalla (las 3 preguntas del brief)
 
 Cada vista responde inmediatamente:
+
 - **¿Qué puedo hacer aquí?** → una barra de título con la acción primaria a la derecha.
 - **¿Qué es lo más importante?** → primer bloque = dato/acción de mayor valor
   (ej. buscador en Check-in, indicadores accionables en Dashboard).

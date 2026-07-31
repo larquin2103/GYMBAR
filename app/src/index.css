@@ -1,0 +1,36 @@
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg text-content font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* Números tabulares para dinero y tablas. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Foco visible y accesible en toda la app. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-bg;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+}

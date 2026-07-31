@@ -22,16 +22,16 @@ prioridades de arquitectura y UX de este proyecto.
 
 ## 2. Mejores prácticas actuales (SaaS de gestión, 2025-2026)
 
-| Práctica | Por qué | Cómo se aplica aquí |
-|---|---|---|
-| **Command palette (Cmd/Ctrl-K)** como entrada primaria | Reduce navegación a cero clics para usuarios frecuentes (Linear, Notion, Stripe) | Búsqueda global de clientes + acciones ("Registrar pago", "Abrir caja") |
-| **Optimistic UI** en acciones frecuentes | Feedback < 100 ms percibido como instantáneo | Check-in y asistencia se pintan antes de confirmar servidor |
-| **Server-driven authorization** | Nunca confiar en el cliente | Firestore Rules + Custom Claims + Cloud Functions para mutaciones sensibles |
-| **Multi-tenant desde día 1** | Reescribir aislamiento después es catastrófico | `organizationId` en claim + datos bajo `/organizations/{orgId}/...` |
-| **Precomputed aggregates** | Firestore cobra por documento leído; los reportes matan el costo | Contadores/rollups mantenidos por Cloud Functions, no `count()` en caliente |
-| **Design tokens + modo oscuro nativo** | Consistencia y percepción de calidad | Sistema de tokens en CSS variables + Tailwind theme |
-| **Offline-first selectivo** | No todo debe ser offline; el dinero sí debe ser online | Check-in/asistencia offline; pagos/caja requieren conexión (ver §Riesgos) |
-| **Skeletons + empty states útiles** | Percepción de velocidad y guía sin capacitación | Cada lista y ficha con su skeleton y su empty state accionable |
+| Práctica                                               | Por qué                                                                          | Cómo se aplica aquí                                                         |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Command palette (Cmd/Ctrl-K)** como entrada primaria | Reduce navegación a cero clics para usuarios frecuentes (Linear, Notion, Stripe) | Búsqueda global de clientes + acciones ("Registrar pago", "Abrir caja")     |
+| **Optimistic UI** en acciones frecuentes               | Feedback < 100 ms percibido como instantáneo                                     | Check-in y asistencia se pintan antes de confirmar servidor                 |
+| **Server-driven authorization**                        | Nunca confiar en el cliente                                                      | Firestore Rules + Custom Claims + Cloud Functions para mutaciones sensibles |
+| **Multi-tenant desde día 1**                           | Reescribir aislamiento después es catastrófico                                   | `organizationId` en claim + datos bajo `/organizations/{orgId}/...`         |
+| **Precomputed aggregates**                             | Firestore cobra por documento leído; los reportes matan el costo                 | Contadores/rollups mantenidos por Cloud Functions, no `count()` en caliente |
+| **Design tokens + modo oscuro nativo**                 | Consistencia y percepción de calidad                                             | Sistema de tokens en CSS variables + Tailwind theme                         |
+| **Offline-first selectivo**                            | No todo debe ser offline; el dinero sí debe ser online                           | Check-in/asistencia offline; pagos/caja requieren conexión (ver §Riesgos)   |
+| **Skeletons + empty states útiles**                    | Percepción de velocidad y guía sin capacitación                                  | Cada lista y ficha con su skeleton y su empty state accionable              |
 
 ## 3. Benchmark de plataformas líderes
 
@@ -41,24 +41,29 @@ experiencia** (SaaS generalistas que el brief pide igualar).
 ### Referentes del dominio (gimnasios)
 
 **Mindbody**
+
 - Fortalezas: ecosistema enorme, reservas, marketplace de descubrimiento.
 - Debilidades: **pesado y lento**, UI sobrecargada, curva de aprendizaje alta,
   caro. Es el anti-ejemplo de "usable sin capacitación".
 
 **Glofox**
+
 - Fortalezas: enfoque móvil, onboarding decente, buen manejo de membresías.
 - Debilidades: reporting limitado, personalización rígida, precio elevado.
 
 **Trainerize / TrueCoach**
+
 - Fortalezas: excelente experiencia de rutinas/coaching y seguimiento de cliente.
 - Debilidades: **no son sistemas de administración/recepción**; débiles en caja,
   inventario y operación de mostrador.
 
 **PushPress / Wodify (nicho CrossFit)**
+
 - Fortalezas: check-in ágil, buena operación de front-desk.
 - Debilidades: muy centrados en su nicho; reporting y multi-sede limitados.
 
 **Software local/regional (los que realmente compiten en LATAM)**
+
 - Fortalezas: baratos, en español, resuelven lo básico (clientes, pagos, caja).
 - Debilidades: **UX de los 2000**, sin PWA/offline real, sin multi-tenant serio,
   sin modo oscuro, formularios enormes, cero microinteracciones. **Aquí está la

@@ -4,15 +4,15 @@
 
 ## 1. Qué corre dónde
 
-| Responsabilidad | Dónde | Por qué |
-|---|---|---|
-| Lecturas/escrituras CRUD simples | Cliente + Firestore Rules | Rápido, offline, menos backend |
-| Aislamiento de tenant y rol | Firestore Rules (claims) | Estructural, infranqueable |
-| Cobros, cierre de caja, anulaciones | Cloud Functions (callable) | Integridad transaccional, no confiable al cliente |
-| Claims/roles | Cloud Functions (admin SDK) | El cliente jamás asigna permisos |
-| Rollups/contadores del dashboard | Cloud Functions (triggers) | Costo y consistencia |
-| Notificaciones | Cloud Functions (scheduled) + FCM | Vencimientos, recordatorios |
-| Recibos PDF | Cloud Functions + Storage | Generación server-side confiable |
+| Responsabilidad                     | Dónde                             | Por qué                                           |
+| ----------------------------------- | --------------------------------- | ------------------------------------------------- |
+| Lecturas/escrituras CRUD simples    | Cliente + Firestore Rules         | Rápido, offline, menos backend                    |
+| Aislamiento de tenant y rol         | Firestore Rules (claims)          | Estructural, infranqueable                        |
+| Cobros, cierre de caja, anulaciones | Cloud Functions (callable)        | Integridad transaccional, no confiable al cliente |
+| Claims/roles                        | Cloud Functions (admin SDK)       | El cliente jamás asigna permisos                  |
+| Rollups/contadores del dashboard    | Cloud Functions (triggers)        | Costo y consistencia                              |
+| Notificaciones                      | Cloud Functions (scheduled) + FCM | Vencimientos, recordatorios                       |
+| Recibos PDF                         | Cloud Functions + Storage         | Generación server-side confiable                  |
 
 ## 2. Organización de Cloud Functions (por dominio)
 

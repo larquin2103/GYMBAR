@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+lib
+coverage
+.firebase
+playwright-report
+test-results
+package-lock.json
+*.tsbuildinfo
+app/dev-dist

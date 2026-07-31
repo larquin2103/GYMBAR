@@ -1,0 +1,52 @@
+/**
+ * Design tokens · fuente única de verdad del sistema visual (ver docs/07).
+ * Se consumen desde tailwind.config.ts. No usar hex sueltos en componentes.
+ */
+
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* Neutrales */
+  --color-bg: #ffffff;
+  --color-surface: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+
+  /* Primario */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-soft: #eef2ff;
+  --color-primary-contrast: #ffffff;
+
+  /* Estados de negocio (mapa canónico) */
+  --state-active: #16a34a;
+  --state-expired: #dc2626;
+  --state-blocked: #b91c1c;
+  --state-pending: #d97706;
+  --state-frozen: #0891b2;
+  --state-cancel: #64748b;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #0b0f17;
+  --color-surface: #111827;
+  --color-border: #1f2937;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-primary-soft: #1e1b4b;
+  --color-primary-contrast: #ffffff;
+
+  --state-active: #22c55e;
+  --state-expired: #ef4444;
+  --state-blocked: #f87171;
+  --state-pending: #f59e0b;
+  --state-frozen: #06b6d4;
+  --state-cancel: #94a3b8;
+}

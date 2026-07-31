@@ -56,12 +56,14 @@ graph TB
 ## 3. ¿Por qué Firebase? (y sus límites, honestamente)
 
 **A favor (para este caso):**
+
 - Offline-first nativo de Firestore = el check-in resiliente casi gratis.
 - Auth + claims resuelve multi-tenant y roles sin backend propio de sesiones.
 - Cero servidores que operar → margen SaaS alto y equipo pequeño.
 - Escala horizontal automática hasta muy lejos para este patrón de carga.
 
 **Límites que aceptamos y mitigamos:**
+
 - **Firestore no hace agregaciones baratas.** `count()`/sumas sobre miles de
   docs son caras y lentas. → **Mitigación:** contadores y rollups mantenidos por
   Cloud Functions (patrón de agregación incremental). Reportes pesados → export
@@ -74,11 +76,11 @@ graph TB
 
 ## 4. Entornos
 
-| Entorno | Uso | Proyecto Firebase |
-|---|---|---|
-| `local` | Emulator Suite (Auth, Firestore, Functions, Storage) | emuladores |
-| `staging` | QA, pruebas de reglas, demo | `gymbar-staging` |
-| `prod` | Producción | `gymbar-prod` |
+| Entorno   | Uso                                                  | Proyecto Firebase |
+| --------- | ---------------------------------------------------- | ----------------- |
+| `local`   | Emulator Suite (Auth, Firestore, Functions, Storage) | emuladores        |
+| `staging` | QA, pruebas de reglas, demo                          | `gymbar-staging`  |
+| `prod`    | Producción                                           | `gymbar-prod`     |
 
 Todo cambio pasa por emuladores → staging → prod. Las Firestore Rules se testean
 en CI contra los emuladores **antes** de desplegar.
