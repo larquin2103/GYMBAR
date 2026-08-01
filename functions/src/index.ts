@@ -1,12 +1,17 @@
 /**
  * Cloud Functions de GYMBAR.
  *
- * Fase 0: solo el esqueleto y un healthcheck. La lógica sensible (createPayment,
- * closeCashSession, setUserRole, updateCounters…) se implementa por dominio en
- * las fases correspondientes (ver docs/09 y docs/12). Cada dominio vivirá en su
- * carpeta (payments/, cashbox/, admin/, stats/, notifications/).
+ * Se organiza por dominio (ver docs/09). Fase 1: identidad y bootstrap de
+ * organización. La lógica sensible de dinero (createPayment, closeCashSession…)
+ * llega en la Fase 2.
  */
+import { initializeApp } from 'firebase-admin/app';
 import { onRequest } from 'firebase-functions/v2/https';
+
+initializeApp();
+
+export { setUserRole } from './admin/setUserRole.js';
+export { createOrganization } from './admin/onOrganizationCreated.js';
 
 export const healthcheck = onRequest((_req, res) => {
   res.json({ ok: true, service: 'gymbar-functions', ts: Date.now() });

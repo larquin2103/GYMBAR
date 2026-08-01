@@ -1,33 +1,62 @@
-import { createContext, useContext, type ReactNode } from 'react';
-import type { Role } from '@gymbar/shared';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { AuthGateway, Session } from '@/domain/auth/session';
+import { getAuthGateway } from '@/data/auth/auth.gateway.factory';
 
-export interface Session {
-  uid: string;
-  displayName: string;
-  organizationName: string;
-  role: Role;
+interface AuthContextValue {
+  session: Session | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-const SessionContext = createContext<Session | null>(null);
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Placeholder de sesión para la Fase 0. En la Fase 1 se reemplaza por el estado
- * real de Firebase Auth + custom claims (organizationId + role), sin cambiar la
- * API que consumen los componentes.
+ * Proveedor de autenticación. Se suscribe al gateway (Firebase o mock) y expone
+ * la sesión y las acciones de login/logout. El gateway resuelve organizationId y
+ * rol desde los custom claims; la UI nunca decide permisos por su cuenta.
  */
-const PLACEHOLDER_SESSION: Session = {
-  uid: 'demo-uid',
-  displayName: 'Equipo demo',
-  organizationName: 'Mi Gimnasio',
-  role: 'admin',
-};
+export function SessionProvider({
+  children,
+  gateway = getAuthGateway(),
+}: {
+  children: ReactNode;
+  gateway?: AuthGateway;
+}) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export function SessionProvider({ children }: { children: ReactNode }) {
-  return <SessionContext.Provider value={PLACEHOLDER_SESSION}>{children}</SessionContext.Provider>;
+  useEffect(() => {
+    const unsubscribe = gateway.observeSession((next) => {
+      setSession(next);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, [gateway]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      loading,
+      signIn: (email, password) => gateway.signIn(email, password),
+      signOut: () => gateway.signOut(),
+    }),
+    [session, loading, gateway],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useSession(): Session {
-  const ctx = useContext(SessionContext);
-  if (!ctx) throw new Error('useSession debe usarse dentro de <SessionProvider>');
+/** Acceso a la sesión y acciones de auth (puede ser null si no hay sesión). */
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth debe usarse dentro de <SessionProvider>');
   return ctx;
+}
+
+/** Sesión garantizada (para usar dentro de rutas protegidas). */
+export function useSession(): Session {
+  const { session } = useAuth();
+  if (!session) throw new Error('useSession requiere una sesión activa');
+  return session;
 }
