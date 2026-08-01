@@ -57,4 +57,22 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // Separa vendors pesados en chunks propios para cacheo independiente.
+        // El SDK de Firebase domina el peso y cambia poco entre despliegues.
+        manualChunks: {
+          'vendor-firebase': [
+            'firebase/app',
+            'firebase/auth',
+            'firebase/firestore',
+            'firebase/storage',
+          ],
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+        },
+      },
+    },
+  },
 });
