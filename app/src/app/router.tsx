@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { Dumbbell, Ruler, Boxes, ShoppingBag } from 'lucide-react';
+import { Ruler, Boxes, ShoppingBag } from 'lucide-react';
 import { Shell } from './layout/Shell';
 import { CommandPaletteProvider } from './layout/CommandPalette';
 import { RequireAuth } from './auth/RequireAuth';
@@ -18,6 +18,7 @@ const UsersPage = lazy(() => import('@/features/settings/pages/UsersPage'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
 const AttendancePage = lazy(() => import('@/features/attendance/pages/AttendancePage'));
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
+const RoutinesPage = lazy(() => import('@/features/routines/pages/RoutinesPage'));
 
 function RootLayout() {
   return (
@@ -44,17 +45,7 @@ export const router = createBrowserRouter([
           { path: 'payments', element: <PaymentsPage /> },
           { path: 'cashbox', element: <CashboxPage /> },
           { path: 'attendance', element: <AttendancePage /> },
-          {
-            path: 'routines',
-            element: (
-              <PlaceholderPage
-                title="Rutinas"
-                description="Planes de entrenamiento asignados por el entrenador"
-                icon={Dumbbell}
-                phase="Fase 4"
-              />
-            ),
-          },
+          { path: 'routines', element: <RoutinesPage /> },
           {
             path: 'measurements',
             element: (

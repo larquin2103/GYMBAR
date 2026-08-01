@@ -47,6 +47,11 @@ service cloud.firestore {
         allow read, write: if inOrg(oid) && isStaff();
       }
 
+      // Rutinas de entrenamiento. Las gestiona el staff (entrenadores incluidos).
+      match /routines/{id} {
+        allow read, write: if inOrg(oid) && isStaff();
+      }
+
       // Membresías: solo lectura desde el cliente. La vigencia la fija la Cloud
       // Function renewMembership (transaccional, junto al pago).
       match /memberships/{id} {

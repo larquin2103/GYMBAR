@@ -8,6 +8,7 @@ import type { CashSession, CashMovement } from '@/domain/cashbox/cashbox.entity'
 import type { Measurement } from '@/domain/measurement/measurement.entity';
 import type { OrganizationSettings } from '@/domain/organization/organization.entity';
 import type { StaffUser } from '@/domain/staff/staff.entity';
+import type { Routine } from '@/domain/routine/routine.entity';
 import { addDays, startOfDay } from '@/domain/membership/membership.logic';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
@@ -23,6 +24,7 @@ export interface DemoData {
   cashSessions: CashSession[];
   cashMovements: CashMovement[];
   measurements: Measurement[];
+  routines: Routine[];
   settings: OrganizationSettings;
   staff: StaffUser[];
   receiptSeq: number;
@@ -194,6 +196,93 @@ function buildSeed(): DemoData {
     1.4,
   );
 
+  // Rutinas de ejemplo asignadas por el entrenador.
+  const routines: Routine[] = [];
+  const ana = members.find((m) => m.firstName === 'Ana');
+  const diego = members.find((m) => m.firstName === 'Diego');
+  if (ana) {
+    routines.push({
+      id: uid(),
+      memberId: ana.id,
+      memberNameSnapshot: `${ana.firstName} ${ana.lastName}`,
+      title: 'Quema de grasa · 3 días',
+      goal: 'lose_weight',
+      status: 'active',
+      createdBy: 'seed',
+      createdAt: startOfDay(addDays(now, -20)),
+      updatedAt: startOfDay(addDays(now, -20)),
+      notes: 'Cardio moderado al finalizar cada sesión (20 min).',
+      days: [
+        {
+          label: 'Día 1 — Tren inferior',
+          exercises: [
+            { name: 'Sentadilla goblet', sets: 4, reps: '12', restSeconds: 60, notes: null },
+            { name: 'Peso muerto rumano', sets: 3, reps: '12', restSeconds: 90, notes: null },
+            { name: 'Zancadas', sets: 3, reps: '10 c/pierna', restSeconds: 60, notes: null },
+            { name: 'Elevación de gemelos', sets: 4, reps: '15', restSeconds: 45, notes: null },
+          ],
+        },
+        {
+          label: 'Día 2 — Tren superior',
+          exercises: [
+            { name: 'Press de banca con mancuernas', sets: 4, reps: '10-12', restSeconds: 75, notes: null },
+            { name: 'Remo con barra', sets: 4, reps: '10-12', restSeconds: 75, notes: null },
+            { name: 'Press militar', sets: 3, reps: '12', restSeconds: 60, notes: null },
+          ],
+        },
+        {
+          label: 'Día 3 — Full body + core',
+          exercises: [
+            { name: 'Prensa de piernas', sets: 3, reps: '15', restSeconds: 60, notes: null },
+            { name: 'Jalón al pecho', sets: 3, reps: '12', restSeconds: 60, notes: null },
+            { name: 'Plancha', sets: 3, reps: '45 s', restSeconds: 45, notes: null },
+          ],
+        },
+      ],
+    });
+  }
+  if (diego) {
+    routines.push({
+      id: uid(),
+      memberId: diego.id,
+      memberNameSnapshot: `${diego.firstName} ${diego.lastName}`,
+      title: 'Hipertrofia · Empuje/Tirón/Pierna',
+      goal: 'gain_muscle',
+      status: 'active',
+      createdBy: 'seed',
+      createdAt: startOfDay(addDays(now, -10)),
+      updatedAt: startOfDay(addDays(now, -10)),
+      notes: 'Progresar carga cuando complete todas las series al máximo de reps.',
+      days: [
+        {
+          label: 'Empuje',
+          exercises: [
+            { name: 'Press de banca', sets: 4, reps: '8-10', restSeconds: 120, notes: null },
+            { name: 'Press inclinado con mancuernas', sets: 4, reps: '10', restSeconds: 90, notes: null },
+            { name: 'Fondos', sets: 3, reps: 'AMRAP', restSeconds: 90, notes: null },
+            { name: 'Extensión de tríceps en polea', sets: 3, reps: '12', restSeconds: 60, notes: null },
+          ],
+        },
+        {
+          label: 'Tirón',
+          exercises: [
+            { name: 'Dominadas', sets: 4, reps: '8', restSeconds: 120, notes: null },
+            { name: 'Remo con barra', sets: 4, reps: '10', restSeconds: 90, notes: null },
+            { name: 'Curl de bíceps', sets: 3, reps: '12', restSeconds: 60, notes: null },
+          ],
+        },
+        {
+          label: 'Pierna',
+          exercises: [
+            { name: 'Sentadilla', sets: 4, reps: '8', restSeconds: 150, notes: null },
+            { name: 'Peso muerto rumano', sets: 3, reps: '10', restSeconds: 120, notes: null },
+            { name: 'Prensa', sets: 3, reps: '12', restSeconds: 90, notes: null },
+          ],
+        },
+      ],
+    });
+  }
+
   // Asistencias repartidas en la semana (para el gráfico del dashboard).
   const activeMembers = members.filter((m) => m.status === 'active');
   for (let d = 0; d < 7; d++) {
@@ -222,6 +311,7 @@ function buildSeed(): DemoData {
     cashSessions: [],
     cashMovements: [],
     measurements,
+    routines,
     settings: defaultSettings(),
     staff: seedStaff(now),
     receiptSeq: 2000,
@@ -250,6 +340,7 @@ function emptyData(): DemoData {
     cashSessions: [],
     cashMovements: [],
     measurements: [],
+    routines: [],
     settings: defaultSettings(),
     staff: seedStaff(new Date()),
     receiptSeq: 1000,

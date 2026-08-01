@@ -22,6 +22,12 @@ import type {
 } from '@/domain/reports/reports.entity';
 import type { Payment as PaymentType } from '@/domain/payment/payment.entity';
 import type { CheckIn as CheckInType } from '@/domain/checkin/checkin.entity';
+import type {
+  Routine,
+  RoutineInput,
+  RoutineStatus,
+  RoutineRepository,
+} from '@/domain/routine/routine.entity';
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import {
@@ -272,6 +278,49 @@ export class InMemoryReportsRepository implements ReportsRepository {
   }
 }
 
+export class InMemoryRoutineRepository implements RoutineRepository {
+  async listRecent(orgId: string, max = 50): Promise<Routine[]> {
+    return getDemoData(orgId)
+      .routines.slice()
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .slice(0, max);
+  }
+  async listForMember(orgId: string, memberId: string): Promise<Routine[]> {
+    return getDemoData(orgId)
+      .routines.filter((r) => r.memberId === memberId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+  async getById(orgId: string, id: string): Promise<Routine | null> {
+    return getDemoData(orgId).routines.find((r) => r.id === id) ?? null;
+  }
+  async create(orgId: string, input: RoutineInput, createdBy: string): Promise<Routine> {
+    const now = new Date();
+    const routine: Routine = {
+      id: crypto.randomUUID(),
+      ...input,
+      status: 'active',
+      createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    getDemoData(orgId).routines.push(routine);
+    return routine;
+  }
+  async update(orgId: string, id: string, input: RoutineInput): Promise<void> {
+    const routines = getDemoData(orgId).routines;
+    const idx = routines.findIndex((r) => r.id === id);
+    if (idx === -1) throw new Error('Rutina no encontrada');
+    routines[idx] = { ...routines[idx]!, ...input, updatedAt: new Date() };
+  }
+  async setStatus(orgId: string, id: string, status: RoutineStatus): Promise<void> {
+    const routine = getDemoData(orgId).routines.find((r) => r.id === id);
+    if (routine) {
+      routine.status = status;
+      routine.updatedAt = new Date();
+    }
+  }
+}
+
 // Instancias singleton reutilizables por la factory.
 export const demoPlanRepo = new InMemoryPlanRepository();
 export const demoMembershipRepo = new InMemoryMembershipRepository();
@@ -283,3 +332,4 @@ export const demoMeasurementRepo = new InMemoryMeasurementRepository();
 export const demoOrganizationRepo = new InMemoryOrganizationRepository();
 export const demoStaffRepo = new InMemoryStaffRepository();
 export const demoReportsRepo = new InMemoryReportsRepository();
+export const demoRoutineRepo = new InMemoryRoutineRepository();

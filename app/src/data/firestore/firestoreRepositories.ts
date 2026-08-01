@@ -37,6 +37,12 @@ import type {
   RosterRow,
   ReportsRepository,
 } from '@/domain/reports/reports.entity';
+import type {
+  Routine,
+  RoutineInput,
+  RoutineStatus,
+  RoutineRepository,
+} from '@/domain/routine/routine.entity';
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
@@ -383,6 +389,70 @@ export class FirestoreStaffRepository implements StaffRepository {
   }
   async remove(orgId: string, id: string): Promise<void> {
     await deleteDoc(doc(this.col(orgId), id));
+  }
+}
+
+function toRoutine(id: string, x: DocumentData): Routine {
+  return {
+    id,
+    memberId: x.memberId,
+    memberNameSnapshot: x.memberNameSnapshot ?? '',
+    title: x.title ?? '',
+    goal: x.goal ?? null,
+    days: Array.isArray(x.days) ? x.days : [],
+    notes: x.notes ?? null,
+    status: (x.status ?? 'active') as RoutineStatus,
+    createdBy: x.createdBy ?? '',
+    createdAt: d(x.createdAt),
+    updatedAt: d(x.updatedAt),
+  };
+}
+
+export class FirestoreRoutineRepository implements RoutineRepository {
+  constructor(private db: Firestore) {}
+  async listRecent(orgId: string, max = 50): Promise<Routine[]> {
+    const snap = await getDocs(
+      query(col(this.db, orgId, 'routines'), orderBy('updatedAt', 'desc'), fbLimit(max)),
+    );
+    return snap.docs.map((s) => toRoutine(s.id, s.data()));
+  }
+  async listForMember(orgId: string, memberId: string): Promise<Routine[]> {
+    const snap = await getDocs(
+      query(
+        col(this.db, orgId, 'routines'),
+        where('memberId', '==', memberId),
+        orderBy('updatedAt', 'desc'),
+      ),
+    );
+    return snap.docs.map((s) => toRoutine(s.id, s.data()));
+  }
+  async getById(orgId: string, id: string): Promise<Routine | null> {
+    const s = await getDoc(doc(col(this.db, orgId, 'routines'), id));
+    return s.exists() ? toRoutine(s.id, s.data()) : null;
+  }
+  async create(orgId: string, input: RoutineInput, createdBy: string): Promise<Routine> {
+    const ref = doc(col(this.db, orgId, 'routines'));
+    const now = new Date();
+    await setDoc(ref, {
+      ...input,
+      status: 'active',
+      createdBy,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+    });
+    return { id: ref.id, ...input, status: 'active', createdBy, createdAt: now, updatedAt: now };
+  }
+  async update(orgId: string, id: string, input: RoutineInput): Promise<void> {
+    await updateDoc(doc(col(this.db, orgId, 'routines'), id), {
+      ...input,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
+  async setStatus(orgId: string, id: string, status: RoutineStatus): Promise<void> {
+    await updateDoc(doc(col(this.db, orgId, 'routines'), id), {
+      status,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
   }
 }
 

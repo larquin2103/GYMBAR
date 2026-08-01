@@ -32,6 +32,11 @@ import { useMemberCheckins, useRegisterCheckIn } from '@/features/checkin/api/us
 import { useMemberMeasurements } from '@/features/measurements/api/useMeasurements';
 import { MeasurementSheet } from '@/features/measurements/components/MeasurementSheet';
 import { computeBMI } from '@/domain/measurement/measurement.entity';
+import { useMemberRoutines } from '@/features/routines/api/useRoutines';
+import { RoutineSheet } from '@/features/routines/components/RoutineSheet';
+import { countExercises } from '@/domain/routine/routine.entity';
+import { Dumbbell } from 'lucide-react';
+import { Badge } from '@/shared/ui/Badge';
 
 function formatDate(date: Date | null): string {
   if (!date) return 'Sin membresía';
@@ -46,10 +51,12 @@ export default function MemberDetailPage() {
   const { data: payments } = useMemberPayments(memberId);
   const { data: checkins } = useMemberCheckins(memberId);
   const { data: measurements } = useMemberMeasurements(memberId);
+  const { data: routines } = useMemberRoutines(memberId);
   const register = useRegisterCheckIn();
   const [editOpen, setEditOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [measureOpen, setMeasureOpen] = useState(false);
+  const [routineOpen, setRoutineOpen] = useState(false);
   const [checkedIn, setCheckedIn] = useState<string | null>(null);
 
   if (isLoading) {
@@ -306,12 +313,69 @@ export default function MemberDetailPage() {
         </CardBody>
       </Card>
 
+      {/* Rutinas asignadas */}
+      <Card className="mt-5">
+        <CardBody>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-content">
+              <Dumbbell className="h-4 w-4 text-content-muted" />
+              Rutinas de entrenamiento
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setRoutineOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Asignar rutina
+            </Button>
+          </div>
+
+          {(routines?.filter((r) => r.status === 'active').length ?? 0) === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                icon={Dumbbell}
+                title="Sin rutinas activas"
+                description="Asigna un plan de entrenamiento para este cliente."
+              />
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {(routines ?? [])
+                .filter((r) => r.status === 'active')
+                .map((r) => (
+                  <div key={r.id} className="rounded-lg border border-border p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-content">{r.title}</span>
+                      {r.goal && <Badge>{MEMBER_GOAL_LABELS[r.goal]}</Badge>}
+                      <span className="ml-auto text-xs text-content-muted">
+                        {r.days.length} día{r.days.length !== 1 ? 's' : ''} · {countExercises(r)} ejercicios
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {r.days.map((day, di) => (
+                        <span
+                          key={di}
+                          className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-content-muted"
+                        >
+                          {day.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
       <MemberSheet open={editOpen} onClose={() => setEditOpen(false)} member={member} />
       <RenewMembershipSheet open={renewOpen} onClose={() => setRenewOpen(false)} member={member} />
       <MeasurementSheet
         open={measureOpen}
         onClose={() => setMeasureOpen(false)}
         memberId={member.id}
+      />
+      <RoutineSheet
+        open={routineOpen}
+        onClose={() => setRoutineOpen(false)}
+        preset={{ memberId: member.id, memberName: memberFullName(member) }}
       />
     </div>
   );
