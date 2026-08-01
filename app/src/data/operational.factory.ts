@@ -8,6 +8,7 @@ import type { StatsRepository } from '@/domain/stats/stats';
 import type { MeasurementRepository } from '@/domain/measurement/measurement.entity';
 import type { OrganizationRepository } from '@/domain/organization/organization.entity';
 import type { StaffRepository } from '@/domain/staff/staff.entity';
+import type { ReportsRepository } from '@/domain/reports/reports.entity';
 import type { OperationsService } from '@/domain/operations/operations.service';
 import {
   demoPlanRepo,
@@ -19,6 +20,7 @@ import {
   demoMeasurementRepo,
   demoOrganizationRepo,
   demoStaffRepo,
+  demoReportsRepo,
 } from './demo/demoRepositories';
 import { demoOperations } from './demo/demoOperations';
 import {
@@ -31,6 +33,7 @@ import {
   FirestoreMeasurementRepository,
   FirestoreOrganizationRepository,
   FirestoreStaffRepository,
+  FirestoreReportsRepository,
 } from './firestore/firestoreRepositories';
 import { FirebaseOperationsService } from './firestore/firebaseOperations';
 
@@ -50,6 +53,7 @@ interface OperationalData {
   measurements: MeasurementRepository;
   organization: OrganizationRepository;
   staff: StaffRepository;
+  reports: ReportsRepository;
   operations: OperationsService;
 }
 
@@ -69,6 +73,7 @@ export function getOperationalData(): OperationalData {
       measurements: new FirestoreMeasurementRepository(db),
       organization: new FirestoreOrganizationRepository(db),
       staff: new FirestoreStaffRepository(db),
+      reports: new FirestoreReportsRepository(db),
       operations: new FirebaseOperationsService(getFunctionsInstance()),
     };
   } else {
@@ -82,6 +87,7 @@ export function getOperationalData(): OperationalData {
       measurements: demoMeasurementRepo,
       organization: demoOrganizationRepo,
       staff: demoStaffRepo,
+      reports: demoReportsRepo,
       operations: demoOperations,
     };
   }

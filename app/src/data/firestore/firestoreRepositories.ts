@@ -32,9 +32,16 @@ import type {
   OrganizationRepository,
 } from '@/domain/organization/organization.entity';
 import type { StaffUser, StaffInput, StaffRepository } from '@/domain/staff/staff.entity';
+import type {
+  ExpiringRow,
+  RosterRow,
+  ReportsRepository,
+} from '@/domain/reports/reports.entity';
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
+import { startOfDay } from '@/domain/membership/membership.logic';
+import { memberFromDoc } from '@/data/member/member.mapper';
 
 const d = (v: unknown): Date => (v instanceof Timestamp ? v.toDate() : new Date());
 const col = (db: Firestore, orgId: string, name: string) =>
@@ -376,6 +383,75 @@ export class FirestoreStaffRepository implements StaffRepository {
   }
   async remove(orgId: string, id: string): Promise<void> {
     await deleteDoc(doc(this.col(orgId), id));
+  }
+}
+
+export class FirestoreReportsRepository implements ReportsRepository {
+  constructor(private db: Firestore) {}
+  async income(orgId: string, fromKey: string, toKey: string): Promise<Payment[]> {
+    const from = Timestamp.fromDate(new Date(`${fromKey}T00:00:00`));
+    const to = Timestamp.fromDate(new Date(`${toKey}T23:59:59.999`));
+    const snap = await getDocs(
+      query(
+        col(this.db, orgId, 'payments'),
+        where('createdAt', '>=', from),
+        where('createdAt', '<=', to),
+        orderBy('createdAt', 'desc'),
+      ),
+    );
+    return snap.docs.map((s) => toPayment(s.id, s.data()));
+  }
+  async attendance(orgId: string, fromKey: string, toKey: string): Promise<CheckIn[]> {
+    const snap = await getDocs(
+      query(
+        col(this.db, orgId, 'checkins'),
+        where('dateKey', '>=', fromKey),
+        where('dateKey', '<=', toKey),
+        orderBy('dateKey', 'desc'),
+        orderBy('createdAt', 'desc'),
+      ),
+    );
+    return snap.docs.map((s) => toCheckIn(s.id, s.data()));
+  }
+  async expiring(orgId: string, withinDays: number): Promise<ExpiringRow[]> {
+    const today = startOfDay(new Date());
+    const threshold = Timestamp.fromDate(startOfDay(new Date(today.getTime() + withinDays * 86_400_000)));
+    const snap = await getDocs(
+      query(
+        col(this.db, orgId, 'members'),
+        where('membershipEndDate', '<=', threshold),
+        orderBy('membershipEndDate', 'asc'),
+      ),
+    );
+    return snap.docs.map((s) => {
+      const m = memberFromDoc(s.id, s.data());
+      const end = m.membershipEndDate ?? today;
+      const daysLeft = Math.round((startOfDay(end).getTime() - today.getTime()) / 86_400_000);
+      return {
+        memberId: m.id,
+        memberName: `${m.firstName} ${m.lastName}`,
+        phone: m.phone,
+        planName: null,
+        endDate: end,
+        daysLeft,
+      };
+    });
+  }
+  async roster(orgId: string): Promise<RosterRow[]> {
+    const snap = await getDocs(query(col(this.db, orgId, 'members'), orderBy('searchName', 'asc')));
+    return snap.docs.map((s) => {
+      const m = memberFromDoc(s.id, s.data());
+      return {
+        memberId: m.id,
+        code: m.code,
+        name: `${m.firstName} ${m.lastName}`,
+        phone: m.phone,
+        status: m.status,
+        goal: m.goal,
+        endDate: m.membershipEndDate,
+        createdAt: m.createdAt,
+      };
+    });
   }
 }
 

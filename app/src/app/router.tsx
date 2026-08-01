@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { Dumbbell, Ruler, Boxes, ShoppingBag, BarChart3 } from 'lucide-react';
+import { Dumbbell, Ruler, Boxes, ShoppingBag } from 'lucide-react';
 import { Shell } from './layout/Shell';
 import { CommandPaletteProvider } from './layout/CommandPalette';
 import { RequireAuth } from './auth/RequireAuth';
@@ -17,6 +17,7 @@ const CashboxPage = lazy(() => import('@/features/cashbox/pages/CashboxPage'));
 const UsersPage = lazy(() => import('@/features/settings/pages/UsersPage'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
 const AttendancePage = lazy(() => import('@/features/attendance/pages/AttendancePage'));
+const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
 
 function RootLayout() {
   return (
@@ -87,17 +88,7 @@ export const router = createBrowserRouter([
               />
             ),
           },
-          {
-            path: 'reports',
-            element: (
-              <PlaceholderPage
-                title="Reportes"
-                description="Exportación a PDF y Excel con filtros rápidos"
-                icon={BarChart3}
-                phase="Fase 3"
-              />
-            ),
-          },
+          { path: 'reports', element: <ReportsPage /> },
           { path: 'settings/users', element: <UsersPage /> },
           { path: 'settings', element: <SettingsPage /> },
           { path: '*', element: <Navigate to="/" replace /> },

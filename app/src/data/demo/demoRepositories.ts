@@ -15,6 +15,13 @@ import type {
   OrganizationRepository,
 } from '@/domain/organization/organization.entity';
 import type { StaffUser, StaffInput, StaffRepository } from '@/domain/staff/staff.entity';
+import type {
+  ExpiringRow,
+  RosterRow,
+  ReportsRepository,
+} from '@/domain/reports/reports.entity';
+import type { Payment as PaymentType } from '@/domain/payment/payment.entity';
+import type { CheckIn as CheckInType } from '@/domain/checkin/checkin.entity';
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import {
@@ -213,6 +220,58 @@ export class InMemoryStaffRepository implements StaffRepository {
   }
 }
 
+export class InMemoryReportsRepository implements ReportsRepository {
+  async income(orgId: string, fromKey: string, toKey: string): Promise<PaymentType[]> {
+    return getDemoData(orgId)
+      .payments.filter((p) => {
+        const key = dateKeyOf(p.createdAt);
+        return key >= fromKey && key <= toKey;
+      })
+      .sort(byNewest);
+  }
+  async attendance(orgId: string, fromKey: string, toKey: string): Promise<CheckInType[]> {
+    return getDemoData(orgId)
+      .checkins.filter((c) => c.dateKey >= fromKey && c.dateKey <= toKey)
+      .sort(byNewest);
+  }
+  async expiring(orgId: string, withinDays: number): Promise<ExpiringRow[]> {
+    const data = getDemoData(orgId);
+    const today = startOfDay(new Date());
+    return data.members
+      .filter((m) => m.membershipEndDate != null)
+      .map((m) => {
+        const end = startOfDay(m.membershipEndDate!);
+        const daysLeft = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+        const membership = data.memberships.find((x) => x.id === m.currentMembershipId);
+        return {
+          memberId: m.id,
+          memberName: `${m.firstName} ${m.lastName}`,
+          phone: m.phone,
+          planName: membership?.planNameSnapshot ?? null,
+          endDate: m.membershipEndDate!,
+          daysLeft,
+        };
+      })
+      .filter((r) => r.daysLeft <= withinDays)
+      .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+  }
+  async roster(orgId: string): Promise<RosterRow[]> {
+    return getDemoData(orgId)
+      .members.slice()
+      .sort((a, b) => a.searchName.localeCompare(b.searchName))
+      .map((m) => ({
+        memberId: m.id,
+        code: m.code,
+        name: `${m.firstName} ${m.lastName}`,
+        phone: m.phone,
+        status: m.status,
+        goal: m.goal,
+        endDate: m.membershipEndDate,
+        createdAt: m.createdAt,
+      }));
+  }
+}
+
 // Instancias singleton reutilizables por la factory.
 export const demoPlanRepo = new InMemoryPlanRepository();
 export const demoMembershipRepo = new InMemoryMembershipRepository();
@@ -223,3 +282,4 @@ export const demoStatsRepo = new InMemoryStatsRepository();
 export const demoMeasurementRepo = new InMemoryMeasurementRepository();
 export const demoOrganizationRepo = new InMemoryOrganizationRepository();
 export const demoStaffRepo = new InMemoryStaffRepository();
+export const demoReportsRepo = new InMemoryReportsRepository();
