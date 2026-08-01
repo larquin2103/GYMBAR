@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { CalendarCheck, Dumbbell, Ruler, Boxes, ShoppingBag, BarChart3 } from 'lucide-react';
+import { Dumbbell, Ruler, Boxes, ShoppingBag, BarChart3 } from 'lucide-react';
 import { Shell } from './layout/Shell';
 import { CommandPaletteProvider } from './layout/CommandPalette';
 import { RequireAuth } from './auth/RequireAuth';
@@ -16,6 +16,7 @@ const PaymentsPage = lazy(() => import('@/features/billing/pages/PaymentsPage'))
 const CashboxPage = lazy(() => import('@/features/cashbox/pages/CashboxPage'));
 const UsersPage = lazy(() => import('@/features/settings/pages/UsersPage'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
+const AttendancePage = lazy(() => import('@/features/attendance/pages/AttendancePage'));
 
 function RootLayout() {
   return (
@@ -41,17 +42,7 @@ export const router = createBrowserRouter([
           { path: 'memberships', element: <MembershipsPage /> },
           { path: 'payments', element: <PaymentsPage /> },
           { path: 'cashbox', element: <CashboxPage /> },
-          {
-            path: 'attendance',
-            element: (
-              <PlaceholderPage
-                title="Asistencia"
-                description="Historial de entradas y estadística semanal"
-                icon={CalendarCheck}
-                phase="Fase 3"
-              />
-            ),
-          },
+          { path: 'attendance', element: <AttendancePage /> },
           {
             path: 'routines',
             element: (

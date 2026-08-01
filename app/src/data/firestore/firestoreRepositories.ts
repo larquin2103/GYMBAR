@@ -216,6 +216,18 @@ export class FirestoreCheckInRepository implements CheckInRepository {
     );
     return snap.docs.map((s) => toCheckIn(s.id, s.data()));
   }
+  async listRange(orgId: string, fromKey: string, toKey: string): Promise<CheckIn[]> {
+    const snap = await getDocs(
+      query(
+        col(this.db, orgId, 'checkins'),
+        where('dateKey', '>=', fromKey),
+        where('dateKey', '<=', toKey),
+        orderBy('dateKey', 'desc'),
+        orderBy('createdAt', 'desc'),
+      ),
+    );
+    return snap.docs.map((s) => toCheckIn(s.id, s.data()));
+  }
 }
 
 export class FirestoreCashboxRepository implements CashboxRepository {

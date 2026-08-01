@@ -14,4 +14,6 @@ export interface CheckIn {
 export interface CheckInRepository {
   listRecentForMember(orgId: string, memberId: string, max?: number): Promise<CheckIn[]>;
   listToday(orgId: string): Promise<CheckIn[]>;
+  /** Entradas en un rango de días (dateKey 'YYYY-MM-DD', inclusivo). */
+  listRange(orgId: string, fromKey: string, toKey: string): Promise<CheckIn[]>;
 }

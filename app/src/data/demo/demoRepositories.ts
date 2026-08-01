@@ -96,6 +96,11 @@ export class InMemoryCheckInRepository implements CheckInRepository {
       .checkins.filter((c) => c.dateKey === key)
       .sort(byNewest);
   }
+  async listRange(orgId: string, fromKey: string, toKey: string): Promise<CheckIn[]> {
+    return getDemoData(orgId)
+      .checkins.filter((c) => c.dateKey >= fromKey && c.dateKey <= toKey)
+      .sort(byNewest);
+  }
 }
 
 export class InMemoryCashboxRepository implements CashboxRepository {
