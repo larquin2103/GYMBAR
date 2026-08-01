@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
 import { getStorage, connectStorageEmulator, type FirebaseStorage } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator, type Functions } from 'firebase/functions';
 
 const useEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true';
 
@@ -35,6 +36,7 @@ let app: FirebaseApp | null = null;
 let firestore: Firestore | null = null;
 let auth: Auth | null = null;
 let storage: FirebaseStorage | null = null;
+let functions: Functions | null = null;
 
 export function getFirebaseApp(): FirebaseApp {
   if (!isFirebaseConfigured) {
@@ -67,4 +69,11 @@ export function getStorageInstance(): FirebaseStorage {
   storage = getStorage(getFirebaseApp());
   if (useEmulators) connectStorageEmulator(storage, '127.0.0.1', 9199);
   return storage;
+}
+
+export function getFunctionsInstance(): Functions {
+  if (functions) return functions;
+  functions = getFunctions(getFirebaseApp());
+  if (useEmulators) connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  return functions;
 }

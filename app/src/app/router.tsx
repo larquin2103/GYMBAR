@@ -1,9 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import {
-  BadgeCheck,
-  CreditCard,
-  Wallet,
   CalendarCheck,
   Dumbbell,
   Ruler,
@@ -23,6 +20,9 @@ const CheckInPage = lazy(() => import('@/features/checkin/pages/CheckInPage'));
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const MembersPage = lazy(() => import('@/features/members/pages/MembersPage'));
 const MemberDetailPage = lazy(() => import('@/features/members/pages/MemberDetailPage'));
+const MembershipsPage = lazy(() => import('@/features/billing/pages/MembershipsPage'));
+const PaymentsPage = lazy(() => import('@/features/billing/pages/PaymentsPage'));
+const CashboxPage = lazy(() => import('@/features/cashbox/pages/CashboxPage'));
 
 function RootLayout() {
   return (
@@ -45,39 +45,9 @@ export const router = createBrowserRouter([
           { path: 'check-in', element: <CheckInPage /> },
           { path: 'members', element: <MembersPage /> },
           { path: 'members/:memberId', element: <MemberDetailPage /> },
-          {
-            path: 'memberships',
-            element: (
-              <PlaceholderPage
-                title="Membresías"
-                description="Planes, asignación, renovación y congelamiento"
-                icon={BadgeCheck}
-                phase="Fase 2"
-              />
-            ),
-          },
-          {
-            path: 'payments',
-            element: (
-              <PlaceholderPage
-                title="Pagos"
-                description="Registro de cobros, recibos e historial"
-                icon={CreditCard}
-                phase="Fase 2"
-              />
-            ),
-          },
-          {
-            path: 'cashbox',
-            element: (
-              <PlaceholderPage
-                title="Caja"
-                description="Apertura, movimientos y cierre del turno"
-                icon={Wallet}
-                phase="Fase 2"
-              />
-            ),
-          },
+          { path: 'memberships', element: <MembershipsPage /> },
+          { path: 'payments', element: <PaymentsPage /> },
+          { path: 'cashbox', element: <CashboxPage /> },
           {
             path: 'attendance',
             element: (

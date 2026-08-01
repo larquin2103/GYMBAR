@@ -2,30 +2,34 @@ import { normalizeSearch, type MemberPatch, type NewMember } from '@gymbar/share
 import type { Member } from '@/domain/member/member.entity';
 import type { MemberQuery, MemberRepository, Page } from '@/domain/member/member.repository';
 import { buildNewMember, generateMemberCode } from '@/domain/member/member.factory';
+import { getDemoData } from '@/data/demo/demoStore';
 
 /**
- * Repositorio en memoria. Se usa cuando Firebase no está configurado (dev/demo),
- * para que la UI sea plenamente interactiva sin backend. También sirve de doble
- * de pruebas. Implementa exactamente el mismo contrato que el de Firestore.
+ * Repositorio en memoria respaldado por el store de demo compartido. Se usa
+ * cuando Firebase no está configurado (dev/demo), para que la UI sea plenamente
+ * interactiva y coherente con membresías/pagos/check-ins. También sirve de doble
+ * de pruebas (con su propio store inyectable). Mismo contrato que el de Firestore.
  */
 export class InMemoryMemberRepository implements MemberRepository {
-  private byOrg = new Map<string, Member[]>();
+  /** Store opcional para tests aislados; por defecto usa el store de demo. */
+  private readonly override?: Map<string, Member[]>;
 
   constructor(seed?: Record<string, Member[]>) {
     if (seed) {
-      for (const [orgId, members] of Object.entries(seed)) {
-        this.byOrg.set(orgId, [...members]);
-      }
+      this.override = new Map(Object.entries(seed).map(([k, v]) => [k, [...v]]));
     }
   }
 
   private list(orgId: string): Member[] {
-    let arr = this.byOrg.get(orgId);
-    if (!arr) {
-      arr = [];
-      this.byOrg.set(orgId, arr);
+    if (this.override) {
+      let arr = this.override.get(orgId);
+      if (!arr) {
+        arr = [];
+        this.override.set(orgId, arr);
+      }
+      return arr;
     }
-    return arr;
+    return getDemoData(orgId).members;
   }
 
   async getById(orgId: string, id: string): Promise<Member | null> {
@@ -42,7 +46,7 @@ export class InMemoryMemberRepository implements MemberRepository {
       const matchesStatus = query.status ? m.status === query.status : true;
       return matchesTerm && matchesStatus;
     });
-    items = items.sort((a, b) => a.searchName.localeCompare(b.searchName));
+    items = items.slice().sort((a, b) => a.searchName.localeCompare(b.searchName));
 
     const offset = query.cursor ? Number(query.cursor) : 0;
     const pageItems = items.slice(offset, offset + limit);

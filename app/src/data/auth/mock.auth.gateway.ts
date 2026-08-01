@@ -1,5 +1,5 @@
 import type { AuthGateway, Session } from '@/domain/auth/session';
-import { DEMO_ORG_ID } from '@/data/member/member.seed';
+import { DEMO_ORG_ID } from '@/data/demo/demoStore';
 
 const STORAGE_KEY = 'gymbar-demo-session';
 

@@ -1,33 +1,65 @@
 import { Users, UserX, TrendingUp, CalendarClock, ScanLine, RefreshCw } from 'lucide-react';
+import { money, formatMoney } from '@gymbar/shared';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { Stat } from '@/shared/ui/Stat';
 import { Card, CardBody } from '@/shared/ui/Card';
 import { Badge } from '@/shared/ui/Badge';
 import { useSession } from '@/shared/session/SessionContext';
+import { useDashboardStats } from '../api/useDashboardStats';
 
-/**
- * Dashboard de indicadores accionables (ver docs · Dashboard). En Fase 2 los
- * valores vendrán de los contadores precomputados (counters/*); aquí se muestran
- * placeholders con skeleton desactivado para ilustrar la jerarquía visual.
- */
+const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
 export default function DashboardPage() {
   const { organizationName } = useSession();
+  const { data, isLoading } = useDashboardStats();
+  const currency = data?.currency ?? 'MXN';
+  const fmt = (cents: number) => formatMoney(money(cents, currency));
+  const maxWeekly = Math.max(1, ...(data?.weeklyAttendance ?? [1]));
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard"
-        description={`Resumen operativo de ${organizationName}`}
-        action={<Badge>Datos de ejemplo · Fase 2</Badge>}
-      />
+      <PageHeader title="Dashboard" description={`Resumen operativo de ${organizationName}`} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Stat label="Clientes activos" value="—" icon={Users} tone="active" />
-        <Stat label="Vencidos" value="—" icon={UserX} tone="expired" />
-        <Stat label="Ingresos hoy" value="—" icon={TrendingUp} />
-        <Stat label="Ingresos del mes" value="—" icon={TrendingUp} />
-        <Stat label="Entradas hoy" value="—" icon={ScanLine} />
-        <Stat label="Renovaciones" value="—" icon={RefreshCw} tone="pending" />
+        <Stat
+          label="Clientes activos"
+          value={data?.activeMembers ?? 0}
+          icon={Users}
+          tone="active"
+          loading={isLoading}
+        />
+        <Stat
+          label="Vencidos"
+          value={data?.expiredMembers ?? 0}
+          icon={UserX}
+          tone="expired"
+          loading={isLoading}
+        />
+        <Stat
+          label="Ingresos hoy"
+          value={fmt(data?.incomeTodayCents ?? 0)}
+          icon={TrendingUp}
+          loading={isLoading}
+        />
+        <Stat
+          label="Ingresos del mes"
+          value={fmt(data?.incomeMonthCents ?? 0)}
+          icon={TrendingUp}
+          loading={isLoading}
+        />
+        <Stat
+          label="Entradas hoy"
+          value={data?.checkinsToday ?? 0}
+          icon={ScanLine}
+          loading={isLoading}
+        />
+        <Stat
+          label="Renovaciones"
+          value={data?.pendingRenewals ?? 0}
+          icon={RefreshCw}
+          tone="pending"
+          loading={isLoading}
+        />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -38,18 +70,17 @@ export default function DashboardPage() {
               Asistencia semanal
             </div>
             <div className="mt-6 flex h-40 gap-3">
-              {[40, 65, 52, 78, 90, 60, 30].map((h, i) => (
+              {(data?.weeklyAttendance ?? new Array(7).fill(0)).map((v, i) => (
                 <div key={i} className="flex h-full flex-1 flex-col items-center gap-2">
                   <div className="flex w-full flex-1 items-end">
                     <div
                       className="w-full rounded-t bg-primary/70"
-                      style={{ height: `${h}%` }}
+                      style={{ height: `${(v / maxWeekly) * 100}%` }}
+                      title={`${v} entradas`}
                       aria-hidden
                     />
                   </div>
-                  <span className="text-xs text-content-muted">
-                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'][i]}
-                  </span>
+                  <span className="text-xs text-content-muted">{DAYS[i]}</span>
                 </div>
               ))}
             </div>
@@ -62,15 +93,15 @@ export default function DashboardPage() {
             <ul className="mt-4 space-y-3 text-sm text-content-muted">
               <li className="flex items-center justify-between">
                 <span>Renovaciones por vencer</span>
-                <Badge>—</Badge>
+                <Badge>{data?.pendingRenewals ?? 0}</Badge>
               </li>
               <li className="flex items-center justify-between">
-                <span>Pagos pendientes</span>
-                <Badge>—</Badge>
+                <span>Clientes vencidos</span>
+                <Badge>{data?.expiredMembers ?? 0}</Badge>
               </li>
               <li className="flex items-center justify-between">
-                <span>Caja del día</span>
-                <Badge>Sin abrir</Badge>
+                <span>Entradas registradas hoy</span>
+                <Badge>{data?.checkinsToday ?? 0}</Badge>
               </li>
             </ul>
           </CardBody>

@@ -60,42 +60,43 @@ describe('aislamiento multi-tenant', () => {
   });
 });
 
-describe('inmutabilidad de pagos', () => {
-  it('recepción puede crear un pago', async () => {
+describe('pagos server-authoritative', () => {
+  it('nadie puede crear un pago desde el cliente (lo hace la Cloud Function)', async () => {
     const db = ctx('u1', 'orgA', 'reception');
-    await assertSucceeds(
+    await assertFails(
       setDoc(doc(db, 'organizations/orgA/payments/p1'), { amountCents: 1000, currency: 'USD' }),
     );
   });
 
-  it('nadie puede editar un pago desde el cliente', async () => {
+  it('un pago existente no se puede editar ni borrar desde el cliente', async () => {
+    await testEnv.withSecurityRulesDisabled(async (admin) => {
+      await setDoc(doc(admin.firestore(), 'organizations/orgA/payments/p1'), {
+        amountCents: 1000,
+        currency: 'USD',
+      });
+    });
     const db = ctx('u1', 'orgA', 'admin');
     await assertFails(updateDoc(doc(db, 'organizations/orgA/payments/p1'), { amountCents: 5 }));
+    await assertFails(deleteDoc(doc(db, 'organizations/orgA/payments/p1')));
   });
 
-  it('nadie puede borrar un pago desde el cliente', async () => {
-    const db = ctx('u1', 'orgA', 'admin');
-    await assertFails(deleteDoc(doc(db, 'organizations/orgA/payments/p1')));
+  it('un pago SÍ es legible por recepción', async () => {
+    const db = ctx('u1', 'orgA', 'reception');
+    await assertSucceeds(getDoc(doc(db, 'organizations/orgA/payments/p1')));
   });
 });
 
-describe('roles', () => {
-  it('un entrenador NO puede registrar pagos', async () => {
-    const db = ctx('t1', 'orgA', 'trainer');
-    await assertFails(
-      setDoc(doc(db, 'organizations/orgA/payments/p2'), { amountCents: 1000, currency: 'USD' }),
-    );
-  });
-
-  it('recepción NO puede cerrar caja (update bloqueado; es server-side)', async () => {
+describe('roles y caja', () => {
+  it('recepción NO puede crear/cerrar caja desde el cliente (es server-side)', async () => {
     const db = ctx('u1', 'orgA', 'reception');
+    await assertFails(setDoc(doc(db, 'organizations/orgA/cashSessions/s1'), { status: 'open' }));
     await testEnv.withSecurityRulesDisabled(async (admin) => {
-      await setDoc(doc(admin.firestore(), 'organizations/orgA/cashSessions/s1'), {
+      await setDoc(doc(admin.firestore(), 'organizations/orgA/cashSessions/s2'), {
         status: 'open',
       });
     });
     await assertFails(
-      updateDoc(doc(db, 'organizations/orgA/cashSessions/s1'), { status: 'closed' }),
+      updateDoc(doc(db, 'organizations/orgA/cashSessions/s2'), { status: 'closed' }),
     );
   });
 });

@@ -10,7 +10,9 @@ import {
   CalendarClock,
   StickyNote,
 } from 'lucide-react';
+import { money, formatMoney } from '@gymbar/shared';
 import { memberFullName, memberInitials } from '@/domain/member/member.entity';
+import { decideAccess } from '@/domain/checkin/checkin.logic';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { StatusBadge } from '@/shared/ui/Badge';
@@ -19,6 +21,9 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useMember } from '../api/useMembers';
 import { MemberSheet } from '../components/MemberSheet';
+import { RenewMembershipSheet } from '@/features/billing/components/RenewMembershipSheet';
+import { useMemberMembership, useMemberPayments } from '@/features/billing/api/useBilling';
+import { useMemberCheckins, useRegisterCheckIn } from '@/features/checkin/api/useCheckin';
 
 function formatDate(date: Date | null): string {
   if (!date) return 'Sin membresía';
@@ -29,7 +34,13 @@ export default function MemberDetailPage() {
   const { memberId } = useParams();
   const navigate = useNavigate();
   const { data: member, isLoading } = useMember(memberId);
+  const { data: membership } = useMemberMembership(memberId);
+  const { data: payments } = useMemberPayments(memberId);
+  const { data: checkins } = useMemberCheckins(memberId);
+  const register = useRegisterCheckIn();
   const [editOpen, setEditOpen] = useState(false);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [checkedIn, setCheckedIn] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -51,6 +62,13 @@ export default function MemberDetailPage() {
     );
   }
 
+  async function onCheckIn() {
+    if (!member) return;
+    const decision = decideAccess(member.status);
+    await register.mutateAsync({ memberId: member.id, source: 'search' });
+    setCheckedIn(decision.label);
+  }
+
   return (
     <div>
       <button
@@ -63,7 +81,6 @@ export default function MemberDetailPage() {
       </button>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* Columna principal: identidad + acciones */}
         <Card className="lg:col-span-2">
           <CardBody>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -88,16 +105,25 @@ export default function MemberDetailPage() {
               </Button>
             </div>
 
-            {/* Acciones rápidas (operativas en Fase 2) */}
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Button size="sm" disabled title="Disponible en Fase 2">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => setRenewOpen(true)}>
                 <CreditCard className="h-4 w-4" />
                 Cobrar
               </Button>
-              <Button size="sm" variant="secondary" disabled title="Disponible en Fase 2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={onCheckIn}
+                loading={register.isPending}
+              >
                 <ScanLine className="h-4 w-4" />
                 Check-in
               </Button>
+              {checkedIn && (
+                <span className="text-sm text-state-active">
+                  ✓ {checkedIn} · entrada registrada
+                </span>
+              )}
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -107,6 +133,11 @@ export default function MemberDetailPage() {
                 icon={CalendarClock}
                 label="Vencimiento"
                 value={formatDate(member.membershipEndDate)}
+              />
+              <InfoRow
+                icon={CreditCard}
+                label="Plan actual"
+                value={membership?.planNameSnapshot ?? '—'}
               />
             </div>
 
@@ -122,22 +153,53 @@ export default function MemberDetailPage() {
           </CardBody>
         </Card>
 
-        {/* Columna lateral: actividad reciente (Fase 2/3) */}
-        <Card>
-          <CardBody>
-            <div className="text-sm font-semibold text-content">Últimas asistencias</div>
-            <div className="mt-4">
-              <EmptyState
-                icon={ScanLine}
-                title="Sin asistencias"
-                description="El historial de entradas aparecerá aquí (Fase 2)."
-              />
-            </div>
-          </CardBody>
-        </Card>
+        <div className="space-y-5">
+          <Card>
+            <CardBody>
+              <div className="text-sm font-semibold text-content">Últimos pagos</div>
+              <ul className="mt-4 space-y-2.5">
+                {(payments ?? []).slice(0, 5).map((p) => (
+                  <li key={p.id} className="flex items-center justify-between text-sm">
+                    <span className="text-content-muted">
+                      {p.createdAt.toLocaleDateString('es', { day: '2-digit', month: 'short' })}
+                    </span>
+                    <span className="tabular font-medium text-content">
+                      {formatMoney(money(p.amountCents, p.currency))}
+                    </span>
+                  </li>
+                ))}
+                {(payments?.length ?? 0) === 0 && (
+                  <li className="text-sm text-content-muted">Sin pagos registrados.</li>
+                )}
+              </ul>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody>
+              <div className="text-sm font-semibold text-content">Últimas asistencias</div>
+              <ul className="mt-4 space-y-2.5">
+                {(checkins ?? []).slice(0, 5).map((c) => (
+                  <li key={c.id} className="flex items-center justify-between text-sm">
+                    <span className="text-content-muted">
+                      {c.createdAt.toLocaleDateString('es', { day: '2-digit', month: 'short' })}
+                    </span>
+                    <span className="tabular text-xs text-content-muted">
+                      {c.createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </li>
+                ))}
+                {(checkins?.length ?? 0) === 0 && (
+                  <li className="text-sm text-content-muted">Sin asistencias aún.</li>
+                )}
+              </ul>
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       <MemberSheet open={editOpen} onClose={() => setEditOpen(false)} member={member} />
+      <RenewMembershipSheet open={renewOpen} onClose={() => setRenewOpen(false)} member={member} />
     </div>
   );
 }

@@ -35,36 +35,34 @@ service cloud.firestore {
         allow write: if inOrg(oid) && isAdmin();
       }
 
+      // Membresías: solo lectura desde el cliente. La vigencia la fija la Cloud
+      // Function renewMembership (transaccional, junto al pago).
       match /memberships/{id} {
-        allow read:           if inOrg(oid) && isStaff();
-        allow create, update: if inOrg(oid) && isReception();
-        allow delete:         if false;
+        allow read:  if inOrg(oid) && isStaff();
+        allow write: if false;
       }
 
-      // Pagos: inmutables desde el cliente. Anulaciones vía Cloud Function.
+      // Pagos: solo lectura desde el cliente. Los crea renewMembership; las
+      // anulaciones, voidPayment. Server-authoritative (docs/05).
       match /payments/{id} {
-        allow read:   if inOrg(oid) && isReception();
-        allow create: if inOrg(oid) && isReception();
-        allow update, delete: if false;
+        allow read:  if inOrg(oid) && isReception();
+        allow write: if false;
       }
 
-      // Check-ins: append-only. Nunca se editan ni borran.
+      // Check-ins: solo lectura desde el cliente. Los crea registerCheckIn.
       match /checkins/{id} {
-        allow read:   if inOrg(oid) && isStaff();
-        allow create: if inOrg(oid) && isStaff();
-        allow update, delete: if false;
+        allow read:  if inOrg(oid) && isStaff();
+        allow write: if false;
       }
 
-      // Caja: apertura desde cliente; el cierre (totales) es server-side.
+      // Caja: apertura, movimientos y cierre son server-side (totales confiables).
       match /cashSessions/{id} {
-        allow read:   if inOrg(oid) && isReception();
-        allow create: if inOrg(oid) && isReception();
-        allow update: if false; // closeCashSession (Cloud Function)
+        allow read:  if inOrg(oid) && isReception();
+        allow write: if false;
 
         match /movements/{mid} {
-          allow read:   if inOrg(oid) && isReception();
-          allow create: if inOrg(oid) && isReception();
-          allow update, delete: if false;
+          allow read:  if inOrg(oid) && isReception();
+          allow write: if false;
         }
       }
 

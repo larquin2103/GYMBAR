@@ -7,7 +7,7 @@ describe('InMemoryMemberRepository', () => {
   let repo: InMemoryMemberRepository;
 
   beforeEach(() => {
-    repo = new InMemoryMemberRepository();
+    repo = new InMemoryMemberRepository({});
   });
 
   it('crea y recupera un cliente por id', async () => {
