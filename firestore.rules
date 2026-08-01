@@ -35,6 +35,18 @@ service cloud.firestore {
         allow write: if inOrg(oid) && isAdmin();
       }
 
+      // Directorio de personal. El rol efectivo (claims) lo asigna setUserRole
+      // (Cloud Function); aquí el admin mantiene el directorio.
+      match /staff/{id} {
+        allow read:  if inOrg(oid) && isStaff();
+        allow write: if inOrg(oid) && isAdmin();
+      }
+
+      // Medidas del cliente (subcolección). Staff del tenant.
+      match /members/{mid}/measurements/{id} {
+        allow read, write: if inOrg(oid) && isStaff();
+      }
+
       // Membresías: solo lectura desde el cliente. La vigencia la fija la Cloud
       // Function renewMembership (transaccional, junto al pago).
       match /memberships/{id} {

@@ -6,6 +6,8 @@ import type { CheckInRepository } from '@/domain/checkin/checkin.entity';
 import type { CashboxRepository } from '@/domain/cashbox/cashbox.entity';
 import type { StatsRepository } from '@/domain/stats/stats';
 import type { MeasurementRepository } from '@/domain/measurement/measurement.entity';
+import type { OrganizationRepository } from '@/domain/organization/organization.entity';
+import type { StaffRepository } from '@/domain/staff/staff.entity';
 import type { OperationsService } from '@/domain/operations/operations.service';
 import {
   demoPlanRepo,
@@ -15,6 +17,8 @@ import {
   demoCashboxRepo,
   demoStatsRepo,
   demoMeasurementRepo,
+  demoOrganizationRepo,
+  demoStaffRepo,
 } from './demo/demoRepositories';
 import { demoOperations } from './demo/demoOperations';
 import {
@@ -25,6 +29,8 @@ import {
   FirestoreCashboxRepository,
   FirestoreStatsRepository,
   FirestoreMeasurementRepository,
+  FirestoreOrganizationRepository,
+  FirestoreStaffRepository,
 } from './firestore/firestoreRepositories';
 import { FirebaseOperationsService } from './firestore/firebaseOperations';
 
@@ -42,6 +48,8 @@ interface OperationalData {
   cashbox: CashboxRepository;
   stats: StatsRepository;
   measurements: MeasurementRepository;
+  organization: OrganizationRepository;
+  staff: StaffRepository;
   operations: OperationsService;
 }
 
@@ -59,6 +67,8 @@ export function getOperationalData(): OperationalData {
       cashbox: new FirestoreCashboxRepository(db),
       stats: new FirestoreStatsRepository(db),
       measurements: new FirestoreMeasurementRepository(db),
+      organization: new FirestoreOrganizationRepository(db),
+      staff: new FirestoreStaffRepository(db),
       operations: new FirebaseOperationsService(getFunctionsInstance()),
     };
   } else {
@@ -70,6 +80,8 @@ export function getOperationalData(): OperationalData {
       cashbox: demoCashboxRepo,
       stats: demoStatsRepo,
       measurements: demoMeasurementRepo,
+      organization: demoOrganizationRepo,
+      staff: demoStaffRepo,
       operations: demoOperations,
     };
   }

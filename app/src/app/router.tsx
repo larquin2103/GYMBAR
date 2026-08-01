@@ -1,15 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import {
-  CalendarCheck,
-  Dumbbell,
-  Ruler,
-  Boxes,
-  ShoppingBag,
-  BarChart3,
-  UserCog,
-  Settings,
-} from 'lucide-react';
+import { CalendarCheck, Dumbbell, Ruler, Boxes, ShoppingBag, BarChart3 } from 'lucide-react';
 import { Shell } from './layout/Shell';
 import { CommandPaletteProvider } from './layout/CommandPalette';
 import { RequireAuth } from './auth/RequireAuth';
@@ -23,6 +14,8 @@ const MemberDetailPage = lazy(() => import('@/features/members/pages/MemberDetai
 const MembershipsPage = lazy(() => import('@/features/billing/pages/MembershipsPage'));
 const PaymentsPage = lazy(() => import('@/features/billing/pages/PaymentsPage'));
 const CashboxPage = lazy(() => import('@/features/cashbox/pages/CashboxPage'));
+const UsersPage = lazy(() => import('@/features/settings/pages/UsersPage'));
+const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
 
 function RootLayout() {
   return (
@@ -114,28 +107,8 @@ export const router = createBrowserRouter([
               />
             ),
           },
-          {
-            path: 'settings/users',
-            element: (
-              <PlaceholderPage
-                title="Usuarios"
-                description="Gestión de personal y roles"
-                icon={UserCog}
-                phase="Fase 1"
-              />
-            ),
-          },
-          {
-            path: 'settings',
-            element: (
-              <PlaceholderPage
-                title="Configuración"
-                description="Ajustes de la organización"
-                icon={Settings}
-                phase="Fase 1"
-              />
-            ),
-          },
+          { path: 'settings/users', element: <UsersPage /> },
+          { path: 'settings', element: <SettingsPage /> },
           { path: '*', element: <Navigate to="/" replace /> },
         ],
       },

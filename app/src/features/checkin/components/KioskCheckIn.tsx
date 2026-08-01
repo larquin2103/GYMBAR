@@ -9,6 +9,7 @@ import {
 import { Delete, Check, AlertTriangle, XCircle, Dumbbell } from 'lucide-react';
 import { memberFullName } from '@/domain/member/member.entity';
 import { cn } from '@/shared/lib/cn';
+import { useOrgSettings } from '@/features/settings/api/useSettings';
 import { useKioskCheckIn } from '../api/useCheckin';
 
 type Result =
@@ -25,15 +26,19 @@ export function KioskCheckIn() {
   const [pin, setPin] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const kiosk = useKioskCheckIn();
+  const { data: settings } = useOrgSettings();
+  const blockExpired = settings?.kioskBlockExpired ?? true;
   const resetTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const submit = useCallback(
     async (code: string) => {
       try {
         const member = await kiosk.mutateAsync(code);
-        // En autoservicio solo pasa quien está al día; el resto va a recepción.
+        // Solo pasa quien está al día. Los demás van a recepción, salvo que la
+        // organización desactive el bloqueo en configuración.
+        const passes = member.status === 'active' || !blockExpired;
         setResult(
-          member.status === 'active'
+          passes
             ? { kind: 'welcome', name: memberFullName(member) }
             : { kind: 'reception', name: memberFullName(member) },
         );
@@ -43,7 +48,7 @@ export function KioskCheckIn() {
       setPin('');
       resetTimer.current = setTimeout(() => setResult(null), 4000);
     },
-    [kiosk],
+    [kiosk, blockExpired],
   );
 
   const press = useCallback(

@@ -6,6 +6,8 @@ import type { Payment } from '@/domain/payment/payment.entity';
 import type { CheckIn } from '@/domain/checkin/checkin.entity';
 import type { CashSession, CashMovement } from '@/domain/cashbox/cashbox.entity';
 import type { Measurement } from '@/domain/measurement/measurement.entity';
+import type { OrganizationSettings } from '@/domain/organization/organization.entity';
+import type { StaffUser } from '@/domain/staff/staff.entity';
 import { addDays, startOfDay } from '@/domain/membership/membership.logic';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
@@ -21,7 +23,27 @@ export interface DemoData {
   cashSessions: CashSession[];
   cashMovements: CashMovement[];
   measurements: Measurement[];
+  settings: OrganizationSettings;
+  staff: StaffUser[];
   receiptSeq: number;
+}
+
+function defaultSettings(): OrganizationSettings {
+  return {
+    name: 'Mi Gimnasio',
+    currency: CURRENCY,
+    phone: null,
+    address: null,
+    kioskBlockExpired: true,
+  };
+}
+
+function seedStaff(now: Date): StaffUser[] {
+  return [
+    { id: 'demo-admin', displayName: 'Administrador demo', email: 'demo@gymbar.app', role: 'admin', createdAt: now },
+    { id: crypto.randomUUID(), displayName: 'Recepción', email: 'recepcion@gymbar.app', role: 'reception', createdAt: now },
+    { id: crypto.randomUUID(), displayName: 'Entrenador', email: 'coach@gymbar.app', role: 'trainer', createdAt: now },
+  ];
 }
 
 function uid(): string {
@@ -200,6 +222,8 @@ function buildSeed(): DemoData {
     cashSessions: [],
     cashMovements: [],
     measurements,
+    settings: defaultSettings(),
+    staff: seedStaff(now),
     receiptSeq: 2000,
   };
 }
@@ -226,6 +250,8 @@ function emptyData(): DemoData {
     cashSessions: [],
     cashMovements: [],
     measurements: [],
+    settings: defaultSettings(),
+    staff: seedStaff(new Date()),
     receiptSeq: 1000,
   };
 }

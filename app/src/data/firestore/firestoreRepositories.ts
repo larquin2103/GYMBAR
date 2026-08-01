@@ -9,6 +9,7 @@ import {
   where,
   setDoc,
   updateDoc,
+  deleteDoc,
   Timestamp,
   type Firestore,
   type DocumentData,
@@ -25,6 +26,13 @@ import {
   type MeasurementInput,
   type MeasurementRepository,
 } from '@/domain/measurement/measurement.entity';
+import type {
+  OrganizationSettings,
+  OrganizationSettingsInput,
+  OrganizationRepository,
+} from '@/domain/organization/organization.entity';
+import type { StaffUser, StaffInput, StaffRepository } from '@/domain/staff/staff.entity';
+import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
@@ -301,6 +309,61 @@ export class FirestoreMeasurementRepository implements MeasurementRepository {
       createdAt: Timestamp.fromDate(now),
     });
     return m;
+  }
+}
+
+export class FirestoreOrganizationRepository implements OrganizationRepository {
+  constructor(private db: Firestore) {}
+  async getSettings(orgId: string): Promise<OrganizationSettings> {
+    const s = await getDoc(doc(this.db, 'organizations', orgId));
+    const x = s.data() ?? {};
+    return {
+      name: x.name ?? 'Mi Gimnasio',
+      currency: x.currency ?? 'CUP',
+      phone: x.phone ?? null,
+      address: x.address ?? null,
+      kioskBlockExpired: x.kioskBlockExpired ?? true,
+    };
+  }
+  async updateSettings(orgId: string, input: OrganizationSettingsInput): Promise<void> {
+    await updateDoc(doc(this.db, 'organizations', orgId), {
+      ...input,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
+}
+
+export class FirestoreStaffRepository implements StaffRepository {
+  constructor(private db: Firestore) {}
+  private col(orgId: string) {
+    return collection(this.db, 'organizations', orgId, 'staff');
+  }
+  async list(orgId: string): Promise<StaffUser[]> {
+    const snap = await getDocs(this.col(orgId));
+    return snap.docs.map((s) => {
+      const x = s.data();
+      return {
+        id: s.id,
+        displayName: x.displayName ?? '',
+        email: x.email ?? '',
+        role: (x.role ?? 'reception') as Role,
+        createdAt: d(x.createdAt),
+      };
+    });
+  }
+  async add(orgId: string, input: StaffInput): Promise<StaffUser> {
+    // En prod, la invitación + asignación de claims la hace una Cloud Function
+    // (setUserRole). Aquí se registra el directorio de personal.
+    const ref = doc(this.col(orgId));
+    const now = new Date();
+    await setDoc(ref, { ...input, createdAt: Timestamp.fromDate(now) });
+    return { id: ref.id, ...input, createdAt: now };
+  }
+  async updateRole(orgId: string, id: string, role: Role): Promise<void> {
+    await updateDoc(doc(this.col(orgId), id), { role });
+  }
+  async remove(orgId: string, id: string): Promise<void> {
+    await deleteDoc(doc(this.col(orgId), id));
   }
 }
 
