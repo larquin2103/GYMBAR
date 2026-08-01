@@ -9,7 +9,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { cn } from '@/shared/lib/cn';
 import { useOpenSession, useSessionMovements, useCashMutations } from '../api/useCashbox';
 
-const CURRENCY = 'MXN';
+const CURRENCY = 'CUP';
 const toCents = (v: string) => Math.round(parseFloat(v || '0') * 100);
 const fmt = (cents: number) => formatMoney(money(cents, CURRENCY));
 

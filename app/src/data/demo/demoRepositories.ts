@@ -127,7 +127,7 @@ export class InMemoryStatsRepository implements StatsRepository {
       incomeTodayCents: incomeToday,
       incomeMonthCents: incomeMonth,
       pendingRenewals,
-      currency: data.plans[0]?.currency ?? 'MXN',
+      currency: data.plans[0]?.currency ?? 'CUP',
       weeklyAttendance: weekly,
     };
   }

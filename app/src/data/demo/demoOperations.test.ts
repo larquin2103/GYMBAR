@@ -34,7 +34,7 @@ describe('DemoOperationsService (orquestación de renovación)', () => {
   });
 
   it('cerrar caja cuadra ingresos contra el efectivo contado', async () => {
-    await ops.openCashSession({ orgId: DEMO_ORG_ID, openingFloatCents: 10000, currency: 'MXN' });
+    await ops.openCashSession({ orgId: DEMO_ORG_ID, openingFloatCents: 10000, currency: 'CUP' });
     await ops.addCashMovement({
       orgId: DEMO_ORG_ID,
       type: 'income',

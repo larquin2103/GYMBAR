@@ -22,4 +22,9 @@ describe('money', () => {
     // El separador exacto depende del runtime ICU; validamos que incluya el número.
     expect(formatMoney(money(150000, 'USD'), 'en-US')).toContain('1,500');
   });
+
+  it('el peso cubano (CUP) se muestra como "MN"', () => {
+    const out = formatMoney(money(70000, 'CUP'), 'en-US');
+    expect(out).toBe('700.00 MN');
+  });
 });

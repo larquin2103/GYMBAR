@@ -25,7 +25,7 @@ export const openCashSession = onCall(async (request) => {
     openedBy: request.auth!.uid,
     openedAt: FieldValue.serverTimestamp(),
     openingFloatCents: data.openingFloatCents ?? 0,
-    currency: data.currency ?? 'MXN',
+    currency: data.currency ?? 'CUP',
     closedBy: null,
     closedAt: null,
     totals: { incomeCents: 0, expenseCents: 0, expectedCents: 0, countedCents: 0, diffCents: 0 },

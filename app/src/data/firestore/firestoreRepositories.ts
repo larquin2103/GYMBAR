@@ -240,7 +240,7 @@ export class FirestoreStatsRepository implements StatsRepository {
       incomeTodayCents: x.incomeTodayCents ?? 0,
       incomeMonthCents: x.incomeMonthCents ?? 0,
       pendingRenewals: x.pendingRenewals ?? 0,
-      currency: x.currency ?? 'MXN',
+      currency: x.currency ?? 'CUP',
       weeklyAttendance: x.weeklyAttendance ?? [0, 0, 0, 0, 0, 0, 0],
     };
   }

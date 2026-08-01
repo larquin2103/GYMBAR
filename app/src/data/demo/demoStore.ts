@@ -9,7 +9,7 @@ import { addDays, startOfDay } from '@/domain/membership/membership.logic';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
 export const DEMO_ORG_ID = 'demo-org';
-const CURRENCY = 'MXN';
+const CURRENCY = 'CUP';
 
 export interface DemoData {
   members: Member[];

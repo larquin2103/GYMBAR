@@ -12,7 +12,7 @@ const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 export default function DashboardPage() {
   const { organizationName } = useSession();
   const { data, isLoading } = useDashboardStats();
-  const currency = data?.currency ?? 'MXN';
+  const currency = data?.currency ?? 'CUP';
   const fmt = (cents: number) => formatMoney(money(cents, currency));
   const maxWeekly = Math.max(1, ...(data?.weeklyAttendance ?? [1]));
 

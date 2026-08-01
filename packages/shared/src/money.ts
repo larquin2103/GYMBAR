@@ -33,8 +33,16 @@ function assertSameCurrency(a: Money, b: Money): void {
   }
 }
 
-/** Formatea para UI usando Intl. No usar el resultado para cálculos. */
+/** Formatea para UI. No usar el resultado para cálculos. */
 export function formatMoney(m: Money, locale = 'es'): string {
+  // Peso cubano: se muestra como "MN" (moneda nacional), la convención local.
+  if (m.currency === 'CUP') {
+    const n = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(m.amountCents / 100);
+    return `${n} MN`;
+  }
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: m.currency,
