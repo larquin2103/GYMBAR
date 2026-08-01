@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MemberStatus } from '../enums.js';
+import { MemberStatus, MemberGoal } from '../enums.js';
 
 /** Normaliza texto para búsqueda: minúsculas, sin acentos, sin espacios extra. */
 export function normalizeSearch(value: string): string {
@@ -22,6 +22,7 @@ export const NewMemberSchema = z.object({
     .optional()
     .or(z.literal('')),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
+  goal: MemberGoal.optional(),
   notes: z.string().max(2000).optional(),
 });
 export type NewMember = z.infer<typeof NewMemberSchema>;

@@ -6,6 +6,7 @@ describe('buildNewMember', () => {
     const m = buildNewMember({
       id: '1',
       code: 'M-1000',
+      accessCode: '1234',
       input: { firstName: 'Lucía', lastName: 'Fernández' },
     });
     expect(m.searchName).toBe('lucia fernandez');
@@ -15,6 +16,7 @@ describe('buildNewMember', () => {
     const m = buildNewMember({
       id: '1',
       code: 'M-1',
+      accessCode: '1234',
       input: { firstName: 'Ana', lastName: 'Ruiz' },
     });
     expect(m.status).toBe('pending');
@@ -26,6 +28,7 @@ describe('buildNewMember', () => {
     const m = buildNewMember({
       id: '1',
       code: 'M-1',
+      accessCode: '1234',
       input: { firstName: '  Juan ', lastName: ' Pérez ', phone: '', email: '', notes: '  ' },
     });
     expect(m.firstName).toBe('Juan');

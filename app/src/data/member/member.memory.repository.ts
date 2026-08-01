@@ -1,7 +1,11 @@
 import { normalizeSearch, type MemberPatch, type NewMember } from '@gymbar/shared';
 import type { Member } from '@/domain/member/member.entity';
 import type { MemberQuery, MemberRepository, Page } from '@/domain/member/member.repository';
-import { buildNewMember, generateMemberCode } from '@/domain/member/member.factory';
+import {
+  buildNewMember,
+  generateAccessCode,
+  generateMemberCode,
+} from '@/domain/member/member.factory';
 import { getDemoData } from '@/data/demo/demoStore';
 
 /**
@@ -36,6 +40,10 @@ export class InMemoryMemberRepository implements MemberRepository {
     return this.list(orgId).find((m) => m.id === id) ?? null;
   }
 
+  async getByAccessCode(orgId: string, accessCode: string): Promise<Member | null> {
+    return this.list(orgId).find((m) => m.accessCode === accessCode) ?? null;
+  }
+
   async search(orgId: string, query: MemberQuery): Promise<Page<Member>> {
     const limit = query.limit ?? 20;
     const term = query.search ? normalizeSearch(query.search) : '';
@@ -57,10 +65,25 @@ export class InMemoryMemberRepository implements MemberRepository {
     };
   }
 
+  private uniqueAccessCode(orgId: string): string {
+    const list = this.list(orgId);
+    for (let i = 0; i < 20; i++) {
+      const code = generateAccessCode();
+      if (!list.some((m) => m.accessCode === code)) return code;
+    }
+    return generateAccessCode();
+  }
+
   async create(orgId: string, input: NewMember, photo?: Blob | null): Promise<Member> {
     const id = crypto.randomUUID();
     const photoUrl = photo ? URL.createObjectURL(photo) : null;
-    const member = buildNewMember({ id, code: generateMemberCode(), input, photoUrl });
+    const member = buildNewMember({
+      id,
+      code: generateMemberCode(),
+      accessCode: this.uniqueAccessCode(orgId),
+      input,
+      photoUrl,
+    });
     this.list(orgId).unshift(member);
     return member;
   }
@@ -79,6 +102,7 @@ export class InMemoryMemberRepository implements MemberRepository {
       searchName: normalizeSearch(`${firstName} ${lastName}`),
       phone: patch.phone !== undefined ? patch.phone.trim() || null : prev.phone,
       email: patch.email !== undefined ? patch.email.trim() || null : prev.email,
+      goal: patch.goal !== undefined ? (patch.goal ?? null) : prev.goal,
       notes: patch.notes !== undefined ? patch.notes.trim() || null : prev.notes,
       updatedAt: new Date(),
     };

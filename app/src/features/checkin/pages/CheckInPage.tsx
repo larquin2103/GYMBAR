@@ -11,6 +11,7 @@ import { cn } from '@/shared/lib/cn';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { useMembers } from '@/features/members/api/useMembers';
 import { useRegisterCheckIn, useTodayCheckins } from '../api/useCheckin';
+import { KioskCheckIn } from '../components/KioskCheckIn';
 
 interface LastResult {
   member: Member;
@@ -28,6 +29,7 @@ const toneStyles: Record<LastResult['tone'], string> = {
 const toneIcon = { active: Check, expired: AlertTriangle, pending: Clock, blocked: XCircle };
 
 export default function CheckInPage() {
+  const [mode, setMode] = useState<'desk' | 'kiosk'>('desk');
   const inputRef = useRef<HTMLInputElement>(null);
   const [raw, setRaw] = useState('');
   const search = useDebounce(raw.trim(), 200);
@@ -64,9 +66,52 @@ export default function CheckInPage() {
       <PageHeader
         title="Check-in"
         description="Registra la entrada del cliente en segundos"
-        action={<Badge>Offline-first</Badge>}
+        action={
+          <div className="flex rounded-md border border-border p-0.5">
+            {(['desk', 'kiosk'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  'rounded px-3 py-1.5 text-sm font-medium transition-colors',
+                  mode === m ? 'bg-primary text-primary-contrast' : 'text-content-muted',
+                )}
+              >
+                {m === 'desk' ? 'Mostrador' : 'Autoservicio'}
+              </button>
+            ))}
+          </div>
+        }
       />
 
+      {mode === 'kiosk' ? (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardBody className="p-6">
+              <KioskCheckIn />
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-content">Entradas de hoy</span>
+                <Badge>{today?.length ?? 0}</Badge>
+              </div>
+              <ul className="mt-4 space-y-2">
+                {(today ?? []).slice(0, 12).map((c) => (
+                  <li key={c.id} className="flex items-center justify-between text-sm">
+                    <span className="truncate text-content">{c.memberNameSnapshot}</span>
+                    <span className="tabular text-xs text-content-muted">
+                      {c.createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Card>
@@ -193,6 +238,7 @@ export default function CheckInPage() {
           </CardBody>
         </Card>
       </div>
+      )}
     </div>
   );
 }

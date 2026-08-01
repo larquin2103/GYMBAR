@@ -7,6 +7,11 @@ export function generateMemberCode(): string {
   return `M-${n}`;
 }
 
+/** Genera un PIN de 4 dígitos para el check-in de autoservicio. */
+export function generateAccessCode(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 /**
  * Construye una entidad Member nueva a partir de la entrada validada. Lógica de
  * dominio pura: normaliza búsqueda, fija estado inicial y timestamps. No toca
@@ -15,23 +20,26 @@ export function generateMemberCode(): string {
 export function buildNewMember(params: {
   id: string;
   code: string;
+  accessCode: string;
   input: NewMember;
   photoUrl?: string | null;
   now?: Date;
 }): Member {
-  const { id, code, input, photoUrl = null } = params;
+  const { id, code, accessCode, input, photoUrl = null } = params;
   const now = params.now ?? new Date();
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
   return {
     id,
     code,
+    accessCode,
     firstName,
     lastName,
     searchName: normalizeSearch(`${firstName} ${lastName}`),
     phone: input.phone ? input.phone.trim() : null,
     email: input.email ? input.email.trim() : null,
     photoUrl,
+    goal: input.goal ?? null,
     notes: input.notes?.trim() || null,
     status: 'pending',
     currentMembershipId: null,

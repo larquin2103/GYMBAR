@@ -1,10 +1,11 @@
-import { normalizeSearch, type MemberStatus, type PlanType } from '@gymbar/shared';
+import { normalizeSearch, type MemberGoal, type MemberStatus, type PlanType } from '@gymbar/shared';
 import type { Member } from '@/domain/member/member.entity';
 import type { Plan } from '@/domain/plan/plan.entity';
 import type { Membership } from '@/domain/membership/membership.entity';
 import type { Payment } from '@/domain/payment/payment.entity';
 import type { CheckIn } from '@/domain/checkin/checkin.entity';
 import type { CashSession, CashMovement } from '@/domain/cashbox/cashbox.entity';
+import type { Measurement } from '@/domain/measurement/measurement.entity';
 import { addDays, startOfDay } from '@/domain/membership/membership.logic';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
@@ -19,6 +20,7 @@ export interface DemoData {
   checkins: CheckIn[];
   cashSessions: CashSession[];
   cashMovements: CashMovement[];
+  measurements: Measurement[];
   receiptSeq: number;
 }
 
@@ -57,18 +59,18 @@ function buildSeed(): DemoData {
   const payments: Payment[] = [];
   const checkins: CheckIn[] = [];
 
-  const people: [string, string, MemberStatus, string, number | null][] = [
-    ['Ana', 'García', 'active', '+52 55 1234 5678', 12],
-    ['Carlos', 'Martínez', 'active', '+52 55 2345 6789', 3],
-    ['Lucía', 'Fernández', 'expired', '+52 55 3456 7890', -5],
-    ['Miguel', 'Rodríguez', 'pending', '+52 55 4567 8901', null],
-    ['Sofía', 'López', 'frozen', '+52 55 5678 9012', 20],
-    ['Diego', 'Hernández', 'active', '+52 55 6789 0123', 45],
-    ['Valentina', 'Torres', 'expired', '+52 55 7890 1234', -18],
-    ['Mateo', 'Ramírez', 'active', '+52 55 8901 2345', 8],
+  const people: [string, string, MemberStatus, string, number | null, MemberGoal][] = [
+    ['Ana', 'García', 'active', '+53 5 234 5678', 12, 'lose_weight'],
+    ['Carlos', 'Martínez', 'active', '+53 5 345 6789', 3, 'gain_muscle'],
+    ['Lucía', 'Fernández', 'expired', '+53 5 456 7890', -5, 'maintain'],
+    ['Miguel', 'Rodríguez', 'pending', '+53 5 567 8901', null, 'endurance'],
+    ['Sofía', 'López', 'frozen', '+53 5 678 9012', 20, 'lose_weight'],
+    ['Diego', 'Hernández', 'active', '+53 5 789 0123', 45, 'gain_muscle'],
+    ['Valentina', 'Torres', 'expired', '+53 5 890 1234', -18, 'maintain'],
+    ['Mateo', 'Ramírez', 'active', '+53 5 901 2345', 8, 'endurance'],
   ];
 
-  for (const [firstName, lastName, status, phone, daysToEnd] of people) {
+  for (const [firstName, lastName, status, phone, daysToEnd, goal] of people) {
     const memberId = uid();
     let currentMembershipId: string | null = null;
     let membershipEndDate: Date | null = null;
@@ -112,12 +114,14 @@ function buildSeed(): DemoData {
     members.push({
       id: memberId,
       code: `M-${1000 + members.length}`,
+      accessCode: String(1001 + members.length),
       firstName,
       lastName,
       searchName: normalizeSearch(`${firstName} ${lastName}`),
       phone,
       email: null,
       photoUrl: null,
+      goal,
       notes: null,
       status,
       currentMembershipId,
@@ -127,6 +131,39 @@ function buildSeed(): DemoData {
       updatedAt: now,
     });
   }
+
+  // Serie de medidas para mostrar evolución (Ana baja de peso, Diego gana masa).
+  const measurements: Measurement[] = [];
+  function seedSeries(member: Member | undefined, startWeight: number, deltaPerMonth: number) {
+    if (!member) return;
+    for (let m = 5; m >= 0; m--) {
+      const date = startOfDay(addDays(now, -m * 30));
+      const weightKg = Math.round((startWeight + deltaPerMonth * (5 - m)) * 10) / 10;
+      measurements.push({
+        id: uid(),
+        memberId: member.id,
+        date,
+        weightKg,
+        bodyFatPct: deltaPerMonth < 0 ? Math.round((28 - (5 - m) * 1.2) * 10) / 10 : null,
+        muscleKg: deltaPerMonth > 0 ? Math.round((32 + (5 - m) * 0.8) * 10) / 10 : null,
+        waistCm: deltaPerMonth < 0 ? Math.round(92 - (5 - m) * 1.5) : null,
+        chestCm: null,
+        armCm: deltaPerMonth > 0 ? Math.round(34 + (5 - m) * 0.4) : null,
+        notes: null,
+        createdAt: date,
+      });
+    }
+  }
+  seedSeries(
+    members.find((m) => m.firstName === 'Ana'),
+    82,
+    -2.2,
+  );
+  seedSeries(
+    members.find((m) => m.firstName === 'Diego'),
+    70,
+    1.4,
+  );
 
   // Asistencias repartidas en la semana (para el gráfico del dashboard).
   const activeMembers = members.filter((m) => m.status === 'active');
@@ -155,6 +192,7 @@ function buildSeed(): DemoData {
     checkins,
     cashSessions: [],
     cashMovements: [],
+    measurements,
     receiptSeq: 2000,
   };
 }
@@ -180,6 +218,7 @@ function emptyData(): DemoData {
     checkins: [],
     cashSessions: [],
     cashMovements: [],
+    measurements: [],
     receiptSeq: 1000,
   };
 }

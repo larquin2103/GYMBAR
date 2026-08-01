@@ -3,6 +3,11 @@ import type { Membership, MembershipRepository } from '@/domain/membership/membe
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
 import type { CheckIn, CheckInRepository } from '@/domain/checkin/checkin.entity';
 import type { CashSession, CashMovement, CashboxRepository } from '@/domain/cashbox/cashbox.entity';
+import type {
+  Measurement,
+  MeasurementInput,
+  MeasurementRepository,
+} from '@/domain/measurement/measurement.entity';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import {
   isMembershipActive,
@@ -148,6 +153,32 @@ export class InMemoryStatsRepository implements StatsRepository {
   }
 }
 
+export class InMemoryMeasurementRepository implements MeasurementRepository {
+  async listForMember(orgId: string, memberId: string): Promise<Measurement[]> {
+    return getDemoData(orgId)
+      .measurements.filter((m) => m.memberId === memberId)
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+  async add(orgId: string, memberId: string, input: MeasurementInput): Promise<Measurement> {
+    const now = new Date();
+    const measurement: Measurement = {
+      id: crypto.randomUUID(),
+      memberId,
+      date: input.date,
+      weightKg: input.weightKg ?? null,
+      bodyFatPct: input.bodyFatPct ?? null,
+      muscleKg: input.muscleKg ?? null,
+      waistCm: input.waistCm ?? null,
+      chestCm: input.chestCm ?? null,
+      armCm: input.armCm ?? null,
+      notes: input.notes ?? null,
+      createdAt: now,
+    };
+    getDemoData(orgId).measurements.push(measurement);
+    return measurement;
+  }
+}
+
 // Instancias singleton reutilizables por la factory.
 export const demoPlanRepo = new InMemoryPlanRepository();
 export const demoMembershipRepo = new InMemoryMembershipRepository();
@@ -155,3 +186,4 @@ export const demoPaymentRepo = new InMemoryPaymentRepository();
 export const demoCheckInRepo = new InMemoryCheckInRepository();
 export const demoCashboxRepo = new InMemoryCashboxRepository();
 export const demoStatsRepo = new InMemoryStatsRepository();
+export const demoMeasurementRepo = new InMemoryMeasurementRepository();

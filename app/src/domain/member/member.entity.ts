@@ -1,4 +1,4 @@
-import type { MemberStatus } from '@gymbar/shared';
+import type { MemberStatus, MemberGoal } from '@gymbar/shared';
 
 /**
  * Entidad de dominio Cliente. Independiente de Firestore (fechas como Date, no
@@ -7,6 +7,8 @@ import type { MemberStatus } from '@gymbar/shared';
 export interface Member {
   id: string;
   code: string;
+  /** PIN de 4 dígitos para el check-in de autoservicio (kiosko). */
+  accessCode: string;
   firstName: string;
   lastName: string;
   /** Nombre normalizado (lowercase, sin acentos) para búsqueda por prefijo. */
@@ -14,6 +16,7 @@ export interface Member {
   phone: string | null;
   email: string | null;
   photoUrl: string | null;
+  goal: MemberGoal | null;
   notes: string | null;
   // Campos derivados (mantenidos por Cloud Functions en producción).
   status: MemberStatus;

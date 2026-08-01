@@ -1,5 +1,5 @@
 import { Timestamp, type DocumentData } from 'firebase/firestore';
-import type { MemberStatus } from '@gymbar/shared';
+import type { MemberStatus, MemberGoal } from '@gymbar/shared';
 import type { Member } from '@/domain/member/member.entity';
 
 function toDate(value: unknown): Date | null {
@@ -13,12 +13,14 @@ export function memberFromDoc(id: string, data: DocumentData): Member {
   return {
     id,
     code: data.code ?? '',
+    accessCode: data.accessCode ?? '',
     firstName: data.firstName ?? '',
     lastName: data.lastName ?? '',
     searchName: data.searchName ?? '',
     phone: data.phone ?? null,
     email: data.email ?? null,
     photoUrl: data.photoUrl ?? null,
+    goal: (data.goal ?? null) as MemberGoal | null,
     notes: data.notes ?? null,
     status: (data.status ?? 'pending') as MemberStatus,
     currentMembershipId: data.currentMembershipId ?? null,
@@ -33,12 +35,14 @@ export function memberFromDoc(id: string, data: DocumentData): Member {
 export function memberToDoc(member: Member): DocumentData {
   return {
     code: member.code,
+    accessCode: member.accessCode,
     firstName: member.firstName,
     lastName: member.lastName,
     searchName: member.searchName,
     phone: member.phone,
     email: member.email,
     photoUrl: member.photoUrl,
+    goal: member.goal,
     notes: member.notes,
     status: member.status,
     currentMembershipId: member.currentMembershipId,

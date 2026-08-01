@@ -2,13 +2,14 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera } from 'lucide-react';
-import { NewMemberSchema, type NewMember } from '@gymbar/shared';
+import { NewMemberSchema, MEMBER_GOAL_LABELS, type NewMember, type MemberGoal } from '@gymbar/shared';
 import type { Member } from '@/domain/member/member.entity';
 import { memberInitials } from '@/domain/member/member.entity';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Button } from '@/shared/ui/Button';
 import { Field, Input, Textarea } from '@/shared/ui/Field';
 import { Avatar } from '@/shared/ui/Avatar';
+import { cn } from '@/shared/lib/cn';
 import { useCreateMember, useUpdateMember } from '../api/useMemberMutations';
 
 interface MemberSheetProps {
@@ -31,6 +32,8 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<NewMember>({
     resolver: zodResolver(NewMemberSchema),
@@ -39,9 +42,11 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
       lastName: member?.lastName ?? '',
       phone: member?.phone ?? '',
       email: member?.email ?? '',
+      goal: member?.goal ?? undefined,
       notes: member?.notes ?? '',
     },
   });
+  const goal = watch('goal');
 
   function pickPhoto(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -129,6 +134,27 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
         <Field label="Correo" htmlFor="email" error={errors.email?.message}>
           <Input id="email" type="email" {...register('email')} />
         </Field>
+
+        <div>
+          <div className="mb-2 text-sm font-medium text-content">Objetivo</div>
+          <div className="flex flex-wrap gap-1.5">
+            {(Object.keys(MEMBER_GOAL_LABELS) as MemberGoal[]).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setValue('goal', goal === g ? undefined : g)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+                  goal === g
+                    ? 'bg-primary text-primary-contrast'
+                    : 'bg-surface text-content-muted hover:text-content',
+                )}
+              >
+                {MEMBER_GOAL_LABELS[g]}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Field label="Notas" htmlFor="notes" error={errors.notes?.message}>
           <Textarea

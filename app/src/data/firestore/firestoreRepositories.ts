@@ -19,6 +19,11 @@ import type { Membership, MembershipRepository } from '@/domain/membership/membe
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
 import type { CheckIn, CheckInRepository } from '@/domain/checkin/checkin.entity';
 import type { CashSession, CashMovement, CashboxRepository } from '@/domain/cashbox/cashbox.entity';
+import type {
+  Measurement,
+  MeasurementInput,
+  MeasurementRepository,
+} from '@/domain/measurement/measurement.entity';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
@@ -240,6 +245,61 @@ export class FirestoreCashboxRepository implements CashboxRepository {
       query(col(this.db, orgId, 'cashSessions'), orderBy('openedAt', 'desc'), fbLimit(max)),
     );
     return snap.docs.map((s) => toSession(s.id, s.data()));
+  }
+}
+
+export class FirestoreMeasurementRepository implements MeasurementRepository {
+  constructor(private db: Firestore) {}
+  private col(orgId: string, memberId: string) {
+    return collection(this.db, 'organizations', orgId, 'members', memberId, 'measurements');
+  }
+  async listForMember(orgId: string, memberId: string): Promise<Measurement[]> {
+    const snap = await getDocs(query(this.col(orgId, memberId), orderBy('date', 'desc')));
+    return snap.docs.map((s) => {
+      const x = s.data();
+      return {
+        id: s.id,
+        memberId,
+        date: d(x.date),
+        weightKg: x.weightKg ?? null,
+        bodyFatPct: x.bodyFatPct ?? null,
+        muscleKg: x.muscleKg ?? null,
+        waistCm: x.waistCm ?? null,
+        chestCm: x.chestCm ?? null,
+        armCm: x.armCm ?? null,
+        notes: x.notes ?? null,
+        createdAt: d(x.createdAt),
+      };
+    });
+  }
+  async add(orgId: string, memberId: string, input: MeasurementInput): Promise<Measurement> {
+    const ref = doc(this.col(orgId, memberId));
+    const now = new Date();
+    const data = {
+      date: Timestamp.fromDate(input.date),
+      weightKg: input.weightKg ?? null,
+      bodyFatPct: input.bodyFatPct ?? null,
+      muscleKg: input.muscleKg ?? null,
+      waistCm: input.waistCm ?? null,
+      chestCm: input.chestCm ?? null,
+      armCm: input.armCm ?? null,
+      notes: input.notes ?? null,
+      createdAt: Timestamp.fromDate(now),
+    };
+    await setDoc(ref, data);
+    return {
+      id: ref.id,
+      memberId,
+      date: input.date,
+      weightKg: input.weightKg ?? null,
+      bodyFatPct: input.bodyFatPct ?? null,
+      muscleKg: input.muscleKg ?? null,
+      waistCm: input.waistCm ?? null,
+      chestCm: input.chestCm ?? null,
+      armCm: input.armCm ?? null,
+      notes: input.notes ?? null,
+      createdAt: now,
+    };
   }
 }
 

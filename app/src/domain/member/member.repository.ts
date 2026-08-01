@@ -21,6 +21,8 @@ export interface MemberQuery {
  */
 export interface MemberRepository {
   getById(orgId: string, id: string): Promise<Member | null>;
+  /** Busca por PIN de acceso (check-in de autoservicio). */
+  getByAccessCode(orgId: string, accessCode: string): Promise<Member | null>;
   search(orgId: string, query: MemberQuery): Promise<Page<Member>>;
   create(orgId: string, input: NewMember, photo?: Blob | null): Promise<Member>;
   update(orgId: string, id: string, patch: MemberPatch): Promise<void>;

@@ -25,5 +25,16 @@ export const CheckInResult = z.enum(['allowed', 'expired', 'pending_payment', 'd
 export type CheckInResult = z.infer<typeof CheckInResult>;
 
 /** Origen del check-in, para analítica de mostrador. */
-export const CheckInSource = z.enum(['qr', 'search', 'code', 'phone']);
+export const CheckInSource = z.enum(['qr', 'search', 'code', 'phone', 'kiosk']);
 export type CheckInSource = z.infer<typeof CheckInSource>;
+
+/** Objetivo de entrenamiento del cliente (para seguimiento y evolución). */
+export const MemberGoal = z.enum(['lose_weight', 'gain_muscle', 'maintain', 'endurance']);
+export type MemberGoal = z.infer<typeof MemberGoal>;
+
+export const MEMBER_GOAL_LABELS: Record<MemberGoal, string> = {
+  lose_weight: 'Bajar de peso',
+  gain_muscle: 'Ganar masa muscular',
+  maintain: 'Mantenerse',
+  endurance: 'Resistencia',
+};

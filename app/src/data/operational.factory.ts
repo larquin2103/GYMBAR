@@ -5,6 +5,7 @@ import type { PaymentRepository } from '@/domain/payment/payment.entity';
 import type { CheckInRepository } from '@/domain/checkin/checkin.entity';
 import type { CashboxRepository } from '@/domain/cashbox/cashbox.entity';
 import type { StatsRepository } from '@/domain/stats/stats';
+import type { MeasurementRepository } from '@/domain/measurement/measurement.entity';
 import type { OperationsService } from '@/domain/operations/operations.service';
 import {
   demoPlanRepo,
@@ -13,6 +14,7 @@ import {
   demoCheckInRepo,
   demoCashboxRepo,
   demoStatsRepo,
+  demoMeasurementRepo,
 } from './demo/demoRepositories';
 import { demoOperations } from './demo/demoOperations';
 import {
@@ -22,6 +24,7 @@ import {
   FirestoreCheckInRepository,
   FirestoreCashboxRepository,
   FirestoreStatsRepository,
+  FirestoreMeasurementRepository,
 } from './firestore/firestoreRepositories';
 import { FirebaseOperationsService } from './firestore/firebaseOperations';
 
@@ -38,6 +41,7 @@ interface OperationalData {
   checkins: CheckInRepository;
   cashbox: CashboxRepository;
   stats: StatsRepository;
+  measurements: MeasurementRepository;
   operations: OperationsService;
 }
 
@@ -54,6 +58,7 @@ export function getOperationalData(): OperationalData {
       checkins: new FirestoreCheckInRepository(db),
       cashbox: new FirestoreCashboxRepository(db),
       stats: new FirestoreStatsRepository(db),
+      measurements: new FirestoreMeasurementRepository(db),
       operations: new FirebaseOperationsService(getFunctionsInstance()),
     };
   } else {
@@ -64,6 +69,7 @@ export function getOperationalData(): OperationalData {
       checkins: demoCheckInRepo,
       cashbox: demoCashboxRepo,
       stats: demoStatsRepo,
+      measurements: demoMeasurementRepo,
       operations: demoOperations,
     };
   }

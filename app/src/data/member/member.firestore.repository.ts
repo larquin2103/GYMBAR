@@ -18,7 +18,11 @@ import { getDownloadURL, ref, uploadBytes, type FirebaseStorage } from 'firebase
 import { normalizeSearch, type MemberPatch, type NewMember } from '@gymbar/shared';
 import type { Member } from '@/domain/member/member.entity';
 import type { MemberQuery, MemberRepository, Page } from '@/domain/member/member.repository';
-import { buildNewMember, generateMemberCode } from '@/domain/member/member.factory';
+import {
+  buildNewMember,
+  generateAccessCode,
+  generateMemberCode,
+} from '@/domain/member/member.factory';
 import { memberFromDoc, memberToDoc } from './member.mapper';
 
 /**
@@ -38,6 +42,14 @@ export class FirestoreMemberRepository implements MemberRepository {
   async getById(orgId: string, id: string): Promise<Member | null> {
     const snap = await getDoc(doc(this.membersCol(orgId), id));
     return snap.exists() ? memberFromDoc(snap.id, snap.data()) : null;
+  }
+
+  async getByAccessCode(orgId: string, accessCode: string): Promise<Member | null> {
+    const snap = await getDocs(
+      fbQuery(this.membersCol(orgId), where('accessCode', '==', accessCode), fbLimit(1)),
+    );
+    const first = snap.docs[0];
+    return first ? memberFromDoc(first.id, first.data()) : null;
   }
 
   async search(orgId: string, query: MemberQuery): Promise<Page<Member>> {
@@ -76,7 +88,13 @@ export class FirestoreMemberRepository implements MemberRepository {
       await uploadBytes(storageRef, photo);
       photoUrl = await getDownloadURL(storageRef);
     }
-    const member = buildNewMember({ id: ref0.id, code: generateMemberCode(), input, photoUrl });
+    const member = buildNewMember({
+      id: ref0.id,
+      code: generateMemberCode(),
+      accessCode: generateAccessCode(),
+      input,
+      photoUrl,
+    });
     await setDoc(ref0, {
       ...memberToDoc(member),
       createdAt: serverTimestamp(),
@@ -97,6 +115,7 @@ export class FirestoreMemberRepository implements MemberRepository {
     }
     if (patch.phone !== undefined) partial.phone = patch.phone.trim() || null;
     if (patch.email !== undefined) partial.email = patch.email.trim() || null;
+    if (patch.goal !== undefined) partial.goal = patch.goal ?? null;
     if (patch.notes !== undefined) partial.notes = patch.notes.trim() || null;
     await updateDoc(doc(this.membersCol(orgId), id), partial);
   }
