@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PaymentMethod } from '@gymbar/shared';
+import type { PlanInput } from '@/domain/plan/plan.entity';
 import { getOperationalData } from '@/data/operational.factory';
 import { useSession } from '@/shared/session/SessionContext';
 
@@ -10,6 +11,25 @@ export function usePlans() {
     queryKey: ['plans', organizationId],
     queryFn: () => plans.list(organizationId),
   });
+}
+
+/** Crear/editar planes (solo admin). */
+export function usePlanMutations() {
+  const { organizationId } = useSession();
+  const { plans } = getOperationalData();
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['plans', organizationId] });
+
+  const create = useMutation({
+    mutationFn: (input: PlanInput) => plans.create(organizationId, input),
+    onSuccess: invalidate,
+  });
+  const update = useMutation({
+    mutationFn: (vars: { id: string; input: Partial<PlanInput> }) =>
+      plans.update(organizationId, vars.id, vars.input),
+    onSuccess: invalidate,
+  });
+  return { create, update };
 }
 
 export function useMemberMembership(memberId: string | undefined) {

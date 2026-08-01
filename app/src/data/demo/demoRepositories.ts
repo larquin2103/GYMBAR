@@ -1,4 +1,4 @@
-import type { Plan, PlanRepository } from '@/domain/plan/plan.entity';
+import type { Plan, PlanInput, PlanRepository } from '@/domain/plan/plan.entity';
 import type { Membership, MembershipRepository } from '@/domain/membership/membership.entity';
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
 import type { CheckIn, CheckInRepository } from '@/domain/checkin/checkin.entity';
@@ -18,10 +18,25 @@ const byNewest = <T extends { createdAt: Date }>(a: T, b: T) =>
 
 export class InMemoryPlanRepository implements PlanRepository {
   async list(orgId: string): Promise<Plan[]> {
-    return getDemoData(orgId).plans.filter((p) => p.isActive);
+    // Devuelve todos; la UI de cobro filtra por isActive.
+    return getDemoData(orgId)
+      .plans.slice()
+      .sort((a, b) => a.priceCents - b.priceCents);
   }
   async getById(orgId: string, id: string): Promise<Plan | null> {
     return getDemoData(orgId).plans.find((p) => p.id === id) ?? null;
+  }
+  async create(orgId: string, input: PlanInput): Promise<Plan> {
+    const now = new Date();
+    const plan: Plan = { id: crypto.randomUUID(), ...input, createdAt: now, updatedAt: now };
+    getDemoData(orgId).plans.push(plan);
+    return plan;
+  }
+  async update(orgId: string, id: string, input: Partial<PlanInput>): Promise<void> {
+    const plans = getDemoData(orgId).plans;
+    const idx = plans.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error('Plan no encontrado');
+    plans[idx] = { ...plans[idx]!, ...input, updatedAt: new Date() };
   }
 }
 

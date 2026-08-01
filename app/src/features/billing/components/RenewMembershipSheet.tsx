@@ -22,7 +22,8 @@ export function RenewMembershipSheet({
   onClose: () => void;
   member: Member;
 }) {
-  const { data: plans, isLoading } = usePlans();
+  const { data: allPlans, isLoading } = usePlans();
+  const plans = allPlans?.filter((p) => p.isActive);
   const renew = useRenewMembership();
   const [planId, setPlanId] = useState<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>('cash');

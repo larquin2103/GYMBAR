@@ -7,12 +7,14 @@ import {
   orderBy,
   query,
   where,
+  setDoc,
+  updateDoc,
   Timestamp,
   type Firestore,
   type DocumentData,
   type QueryConstraint,
 } from 'firebase/firestore';
-import type { Plan, PlanRepository } from '@/domain/plan/plan.entity';
+import type { Plan, PlanInput, PlanRepository } from '@/domain/plan/plan.entity';
 import type { Membership, MembershipRepository } from '@/domain/membership/membership.entity';
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
 import type { CheckIn, CheckInRepository } from '@/domain/checkin/checkin.entity';
@@ -104,12 +106,28 @@ function toSession(id: string, x: DocumentData): CashSession {
 export class FirestorePlanRepository implements PlanRepository {
   constructor(private db: Firestore) {}
   async list(orgId: string): Promise<Plan[]> {
-    const snap = await getDocs(query(col(this.db, orgId, 'plans'), where('isActive', '==', true)));
+    const snap = await getDocs(query(col(this.db, orgId, 'plans'), orderBy('priceCents', 'asc')));
     return snap.docs.map((s) => toPlan(s.id, s.data()));
   }
   async getById(orgId: string, id: string): Promise<Plan | null> {
     const s = await getDoc(doc(col(this.db, orgId, 'plans'), id));
     return s.exists() ? toPlan(s.id, s.data()) : null;
+  }
+  async create(orgId: string, input: PlanInput): Promise<Plan> {
+    const ref = doc(col(this.db, orgId, 'plans'));
+    const now = new Date();
+    await setDoc(ref, {
+      ...input,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+    });
+    return { id: ref.id, ...input, createdAt: now, updatedAt: now };
+  }
+  async update(orgId: string, id: string, input: Partial<PlanInput>): Promise<void> {
+    await updateDoc(doc(col(this.db, orgId, 'plans'), id), {
+      ...input,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
   }
 }
 
