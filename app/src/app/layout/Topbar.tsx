@@ -1,13 +1,11 @@
 import { Menu, Search } from 'lucide-react';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
-import { useSession } from '@/shared/session/SessionContext';
 import { ConnectivityIndicator } from './ConnectivityIndicator';
 import { useCommandPalette } from './CommandPalette';
+import { UserMenu } from './UserMenu';
 
 export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { open } = useCommandPalette();
-  const { displayName, role } = useSession();
-  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <header className="flex h-16 items-center gap-3 border-b border-border bg-bg/80 px-4 backdrop-blur">
@@ -35,12 +33,7 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
       <div className="ml-auto flex items-center gap-2">
         <ConnectivityIndicator />
         <ThemeToggle />
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary"
-          title={`${displayName} · ${role}`}
-        >
-          {initial}
-        </div>
+        <UserMenu />
       </div>
     </header>
   );

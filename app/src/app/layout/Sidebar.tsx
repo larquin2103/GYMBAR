@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { Dumbbell } from 'lucide-react';
 import { NAV_GROUPS, NAV_ITEMS } from '@/config/navigation';
 import { useSession } from '@/shared/session/SessionContext';
+import { useOrgSettings } from '@/features/settings/api/useSettings';
 import { cn } from '@/shared/lib/cn';
 
 const GROUP_LABELS: Record<string, string> = {
@@ -12,6 +13,8 @@ const GROUP_LABELS: Record<string, string> = {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { role, organizationName } = useSession();
+  const { data: settings } = useOrgSettings();
+  const gymName = settings?.name ?? organizationName;
   const items = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
@@ -21,7 +24,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <Dumbbell className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-content">{organizationName}</div>
+          <div className="truncate text-sm font-semibold text-content">{gymName}</div>
           <div className="text-xs text-content-muted">GYMBAR</div>
         </div>
       </div>
