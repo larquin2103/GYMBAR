@@ -6,14 +6,14 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react';
-import { Delete, Check, XCircle, Dumbbell } from 'lucide-react';
+import { Delete, Check, AlertTriangle, XCircle, Dumbbell } from 'lucide-react';
 import { memberFullName } from '@/domain/member/member.entity';
-import { decideAccess } from '@/domain/checkin/checkin.logic';
 import { cn } from '@/shared/lib/cn';
 import { useKioskCheckIn } from '../api/useCheckin';
 
 type Result =
-  | { kind: 'ok'; name: string; label: string; allowed: boolean; tone: string }
+  | { kind: 'welcome'; name: string }
+  | { kind: 'reception'; name: string }
   | { kind: 'error'; message: string };
 
 /**
@@ -31,19 +31,17 @@ export function KioskCheckIn() {
     async (code: string) => {
       try {
         const member = await kiosk.mutateAsync(code);
-        const d = decideAccess(member.status);
-        setResult({
-          kind: 'ok',
-          name: memberFullName(member),
-          label: d.label,
-          allowed: d.allowed,
-          tone: d.tone,
-        });
+        // En autoservicio solo pasa quien está al día; el resto va a recepción.
+        setResult(
+          member.status === 'active'
+            ? { kind: 'welcome', name: memberFullName(member) }
+            : { kind: 'reception', name: memberFullName(member) },
+        );
       } catch {
         setResult({ kind: 'error', message: 'Código no encontrado' });
       }
       setPin('');
-      resetTimer.current = setTimeout(() => setResult(null), 3500);
+      resetTimer.current = setTimeout(() => setResult(null), 4000);
     },
     [kiosk],
   );
@@ -100,29 +98,37 @@ export function KioskCheckIn() {
         <div
           className={cn(
             'mb-6 flex w-full items-center gap-3 rounded-lg border p-4',
-            result.kind === 'error'
-              ? 'border-state-expired/40 bg-state-expired/10'
-              : result.allowed
-                ? 'border-state-active/40 bg-state-active/10'
-                : 'border-state-blocked/40 bg-state-blocked/10',
+            result.kind === 'welcome'
+              ? 'border-state-active/40 bg-state-active/10'
+              : result.kind === 'reception'
+                ? 'border-state-pending/40 bg-state-pending/10'
+                : 'border-state-expired/40 bg-state-expired/10',
           )}
         >
-          {result.kind === 'error' || !result.allowed ? (
-            <XCircle className="h-6 w-6 shrink-0 text-state-expired" />
-          ) : (
+          {result.kind === 'welcome' ? (
             <Check className="h-6 w-6 shrink-0 text-state-active" />
+          ) : result.kind === 'reception' ? (
+            <AlertTriangle className="h-6 w-6 shrink-0 text-state-pending" />
+          ) : (
+            <XCircle className="h-6 w-6 shrink-0 text-state-expired" />
           )}
           <div>
-            {result.kind === 'ok' ? (
+            {result.kind === 'error' ? (
+              <div className="text-sm font-medium text-state-expired">{result.message}</div>
+            ) : (
               <>
                 <div className="font-semibold text-content">{result.name}</div>
-                <div className="text-sm text-content-muted">
-                  {result.label}
-                  {result.allowed ? ' · ¡Bienvenido!' : ''}
+                <div
+                  className={cn(
+                    'text-sm',
+                    result.kind === 'welcome' ? 'text-content-muted' : 'text-state-pending',
+                  )}
+                >
+                  {result.kind === 'welcome'
+                    ? '¡Bienvenido! Entrada registrada'
+                    : 'Pasa por recepción'}
                 </div>
               </>
-            ) : (
-              <div className="text-sm font-medium text-state-expired">{result.message}</div>
             )}
           </div>
         </div>

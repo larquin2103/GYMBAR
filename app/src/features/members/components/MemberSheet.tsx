@@ -27,6 +27,7 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
   const fileRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(member?.photoUrl ?? null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -43,6 +44,7 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
       phone: member?.phone ?? '',
       email: member?.email ?? '',
       goal: member?.goal ?? undefined,
+      accessCode: member?.accessCode ?? '',
       notes: member?.notes ?? '',
     },
   });
@@ -56,11 +58,17 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
   }
 
   async function onSubmit(data: NewMember) {
-    if (isEdit && member) {
-      await update.mutateAsync({ id: member.id, patch: data });
-    } else {
-      const created = await create.mutateAsync({ input: data, photo });
-      onCreated?.(created);
+    setFormError(null);
+    try {
+      if (isEdit && member) {
+        await update.mutateAsync({ id: member.id, patch: data });
+      } else {
+        const created = await create.mutateAsync({ input: data, photo });
+        onCreated?.(created);
+      }
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo guardar.');
+      return;
     }
     reset();
     setPhoto(null);
@@ -156,6 +164,22 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
           </div>
         </div>
 
+        <Field
+          label="PIN de autoservicio (4 dígitos)"
+          htmlFor="accessCode"
+          error={errors.accessCode?.message}
+          hint={isEdit ? 'El PIN con el que el cliente confirma su asistencia.' : 'Opcional: si lo dejas vacío se genera automáticamente.'}
+        >
+          <Input
+            id="accessCode"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="Ej. 4821"
+            invalid={!!errors.accessCode}
+            {...register('accessCode')}
+          />
+        </Field>
+
         <Field label="Notas" htmlFor="notes" error={errors.notes?.message}>
           <Textarea
             id="notes"
@@ -163,6 +187,12 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
             {...register('notes')}
           />
         </Field>
+
+        {formError && (
+          <p className="rounded-md bg-state-expired/10 px-3 py-2 text-sm text-state-expired">
+            {formError}
+          </p>
+        )}
       </form>
     </Sheet>
   );

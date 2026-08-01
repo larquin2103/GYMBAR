@@ -23,6 +23,12 @@ export const NewMemberSchema = z.object({
     .or(z.literal('')),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   goal: MemberGoal.optional(),
+  /** PIN de 4 dígitos elegido por el cliente. Vacío = se genera automáticamente. */
+  accessCode: z
+    .string()
+    .regex(/^\d{4}$/, 'El PIN debe ser de 4 dígitos')
+    .optional()
+    .or(z.literal('')),
   notes: z.string().max(2000).optional(),
 });
 export type NewMember = z.infer<typeof NewMemberSchema>;

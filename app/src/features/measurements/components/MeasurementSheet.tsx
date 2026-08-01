@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import type { MeasurementInput } from '@/domain/measurement/measurement.entity';
+import {
+  computeBMI,
+  bmiCategory,
+  type MeasurementInput,
+} from '@/domain/measurement/measurement.entity';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Button } from '@/shared/ui/Button';
 import { Field, Input, Textarea } from '@/shared/ui/Field';
@@ -10,6 +14,32 @@ const num = (v: string): number | null => {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : null;
 };
+
+/** Campo numérico compacto para una medida. */
+function NumField({
+  label,
+  value,
+  onChange,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  suffix?: string;
+}) {
+  return (
+    <Field label={suffix ? `${label} (${suffix})` : label} htmlFor={`m-${label}`}>
+      <Input
+        id={`m-${label}`}
+        type="number"
+        step="0.1"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Field>
+  );
+}
 
 export function MeasurementSheet({
   open,
@@ -23,34 +53,34 @@ export function MeasurementSheet({
   const add = useAddMeasurement(memberId);
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
-  const [weight, setWeight] = useState('');
-  const [bodyFat, setBodyFat] = useState('');
-  const [muscle, setMuscle] = useState('');
-  const [waist, setWaist] = useState('');
-  const [arm, setArm] = useState('');
+  const [f, setF] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  const set = (k: string) => (v: string) => setF((prev) => ({ ...prev, [k]: v }));
+  const bmi = computeBMI(num(f.weight ?? ''), num(f.height ?? ''));
 
   async function onSubmit() {
     setError(null);
     const input: MeasurementInput = {
       date: new Date(`${date}T12:00:00`),
-      weightKg: num(weight),
-      bodyFatPct: num(bodyFat),
-      muscleKg: num(muscle),
-      waistCm: num(waist),
-      armCm: num(arm),
+      weightKg: num(f.weight ?? ''),
+      heightCm: num(f.height ?? ''),
+      bodyFatPct: num(f.fat ?? ''),
+      muscleKg: num(f.muscle ?? ''),
+      neckCm: num(f.neck ?? ''),
+      chestCm: num(f.chest ?? ''),
+      waistCm: num(f.waist ?? ''),
+      hipCm: num(f.hip ?? ''),
+      armCm: num(f.arm ?? ''),
+      thighCm: num(f.thigh ?? ''),
+      calfCm: num(f.calf ?? ''),
       notes: notes.trim() || null,
     };
-    if (
-      input.weightKg == null &&
-      input.bodyFatPct == null &&
-      input.muscleKg == null &&
-      input.waistCm == null &&
-      input.armCm == null
-    ) {
-      return setError('Ingresa al menos una medida.');
-    }
+    const hasAny = Object.entries(input).some(
+      ([k, v]) => k !== 'date' && k !== 'notes' && v != null,
+    );
+    if (!hasAny) return setError('Ingresa al menos una medida.');
     await add.mutateAsync(input);
     onClose();
   }
@@ -62,10 +92,16 @@ export function MeasurementSheet({
       title="Registrar medida"
       description="Toma las medidas del cliente para seguir su evolución"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" type="button" onClick={onClose}>
-            Cancelar
-          </Button>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-content-muted">
+            {bmi != null ? (
+              <>
+                IMC <span className="font-semibold text-content">{bmi}</span> · {bmiCategory(bmi)}
+              </>
+            ) : (
+              'IMC: ingresa peso y altura'
+            )}
+          </span>
           <Button onClick={onSubmit} loading={add.isPending}>
             Guardar medida
           </Button>
@@ -77,26 +113,36 @@ export function MeasurementSheet({
           <Input id="m-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Peso (kg)" htmlFor="m-weight">
-            <Input id="m-weight" type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} />
-          </Field>
-          <Field label="Grasa corporal (%)" htmlFor="m-fat">
-            <Input id="m-fat" type="number" step="0.1" value={bodyFat} onChange={(e) => setBodyFat(e.target.value)} />
-          </Field>
-          <Field label="Masa muscular (kg)" htmlFor="m-muscle">
-            <Input id="m-muscle" type="number" step="0.1" value={muscle} onChange={(e) => setMuscle(e.target.value)} />
-          </Field>
-          <Field label="Cintura (cm)" htmlFor="m-waist">
-            <Input id="m-waist" type="number" step="0.1" value={waist} onChange={(e) => setWaist(e.target.value)} />
-          </Field>
-          <Field label="Brazo (cm)" htmlFor="m-arm">
-            <Input id="m-arm" type="number" step="0.1" value={arm} onChange={(e) => setArm(e.target.value)} />
-          </Field>
+        <div>
+          <div className="mb-2 text-sm font-medium text-content">Composición corporal</div>
+          <div className="grid grid-cols-2 gap-3">
+            <NumField label="Peso" suffix="kg" value={f.weight ?? ''} onChange={set('weight')} />
+            <NumField label="Altura" suffix="cm" value={f.height ?? ''} onChange={set('height')} />
+            <NumField label="Grasa" suffix="%" value={f.fat ?? ''} onChange={set('fat')} />
+            <NumField label="Músculo" suffix="kg" value={f.muscle ?? ''} onChange={set('muscle')} />
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-sm font-medium text-content">Perímetros (cm)</div>
+          <div className="grid grid-cols-2 gap-3">
+            <NumField label="Cuello" value={f.neck ?? ''} onChange={set('neck')} />
+            <NumField label="Pecho" value={f.chest ?? ''} onChange={set('chest')} />
+            <NumField label="Cintura" value={f.waist ?? ''} onChange={set('waist')} />
+            <NumField label="Cadera" value={f.hip ?? ''} onChange={set('hip')} />
+            <NumField label="Brazo" value={f.arm ?? ''} onChange={set('arm')} />
+            <NumField label="Muslo" value={f.thigh ?? ''} onChange={set('thigh')} />
+            <NumField label="Pantorrilla" value={f.calf ?? ''} onChange={set('calf')} />
+          </div>
         </div>
 
         <Field label="Notas" htmlFor="m-notes">
-          <Textarea id="m-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Observaciones de la medición…" />
+          <Textarea
+            id="m-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Observaciones de la medición…"
+          />
         </Field>
 
         {error && (

@@ -3,10 +3,11 @@ import type { Membership, MembershipRepository } from '@/domain/membership/membe
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
 import type { CheckIn, CheckInRepository } from '@/domain/checkin/checkin.entity';
 import type { CashSession, CashMovement, CashboxRepository } from '@/domain/cashbox/cashbox.entity';
-import type {
-  Measurement,
-  MeasurementInput,
-  MeasurementRepository,
+import {
+  materializeMeasurement,
+  type Measurement,
+  type MeasurementInput,
+  type MeasurementRepository,
 } from '@/domain/measurement/measurement.entity';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import {
@@ -160,20 +161,7 @@ export class InMemoryMeasurementRepository implements MeasurementRepository {
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }
   async add(orgId: string, memberId: string, input: MeasurementInput): Promise<Measurement> {
-    const now = new Date();
-    const measurement: Measurement = {
-      id: crypto.randomUUID(),
-      memberId,
-      date: input.date,
-      weightKg: input.weightKg ?? null,
-      bodyFatPct: input.bodyFatPct ?? null,
-      muscleKg: input.muscleKg ?? null,
-      waistCm: input.waistCm ?? null,
-      chestCm: input.chestCm ?? null,
-      armCm: input.armCm ?? null,
-      notes: input.notes ?? null,
-      createdAt: now,
-    };
+    const measurement = materializeMeasurement(crypto.randomUUID(), memberId, input, new Date());
     getDemoData(orgId).measurements.push(measurement);
     return measurement;
   }

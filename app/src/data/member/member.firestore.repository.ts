@@ -88,10 +88,16 @@ export class FirestoreMemberRepository implements MemberRepository {
       await uploadBytes(storageRef, photo);
       photoUrl = await getDownloadURL(storageRef);
     }
+    let accessCode = input.accessCode || generateAccessCode();
+    if (input.accessCode) {
+      const existing = await this.getByAccessCode(orgId, input.accessCode);
+      if (existing) throw new Error('Ese PIN ya está en uso por otro cliente');
+      accessCode = input.accessCode;
+    }
     const member = buildNewMember({
       id: ref0.id,
       code: generateMemberCode(),
-      accessCode: generateAccessCode(),
+      accessCode,
       input,
       photoUrl,
     });
@@ -116,6 +122,11 @@ export class FirestoreMemberRepository implements MemberRepository {
     if (patch.phone !== undefined) partial.phone = patch.phone.trim() || null;
     if (patch.email !== undefined) partial.email = patch.email.trim() || null;
     if (patch.goal !== undefined) partial.goal = patch.goal ?? null;
+    if (patch.accessCode) {
+      const existing = await this.getByAccessCode(orgId, patch.accessCode);
+      if (existing && existing.id !== id) throw new Error('Ese PIN ya está en uso por otro cliente');
+      partial.accessCode = patch.accessCode;
+    }
     if (patch.notes !== undefined) partial.notes = patch.notes.trim() || null;
     await updateDoc(doc(this.membersCol(orgId), id), partial);
   }

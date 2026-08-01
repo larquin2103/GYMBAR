@@ -139,16 +139,23 @@ function buildSeed(): DemoData {
     for (let m = 5; m >= 0; m--) {
       const date = startOfDay(addDays(now, -m * 30));
       const weightKg = Math.round((startWeight + deltaPerMonth * (5 - m)) * 10) / 10;
+      const losing = deltaPerMonth < 0;
+      const gaining = deltaPerMonth > 0;
       measurements.push({
         id: uid(),
         memberId: member.id,
         date,
         weightKg,
-        bodyFatPct: deltaPerMonth < 0 ? Math.round((28 - (5 - m) * 1.2) * 10) / 10 : null,
-        muscleKg: deltaPerMonth > 0 ? Math.round((32 + (5 - m) * 0.8) * 10) / 10 : null,
-        waistCm: deltaPerMonth < 0 ? Math.round(92 - (5 - m) * 1.5) : null,
-        chestCm: null,
-        armCm: deltaPerMonth > 0 ? Math.round(34 + (5 - m) * 0.4) : null,
+        heightCm: member.firstName === 'Ana' ? 168 : 175,
+        bodyFatPct: losing ? Math.round((28 - (5 - m) * 1.2) * 10) / 10 : null,
+        muscleKg: gaining ? Math.round((32 + (5 - m) * 0.8) * 10) / 10 : null,
+        neckCm: null,
+        chestCm: gaining ? Math.round(96 + (5 - m) * 0.6) : null,
+        waistCm: losing ? Math.round(92 - (5 - m) * 1.5) : null,
+        hipCm: losing ? Math.round(104 - (5 - m) * 1.0) : null,
+        armCm: gaining ? Math.round(34 + (5 - m) * 0.4) : null,
+        thighCm: null,
+        calfCm: null,
         notes: null,
         createdAt: date,
       });

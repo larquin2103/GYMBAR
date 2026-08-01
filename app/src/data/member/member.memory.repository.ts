@@ -67,23 +67,30 @@ export class InMemoryMemberRepository implements MemberRepository {
 
   private uniqueAccessCode(orgId: string): string {
     const list = this.list(orgId);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 50; i++) {
       const code = generateAccessCode();
       if (!list.some((m) => m.accessCode === code)) return code;
     }
     return generateAccessCode();
   }
 
+  /** Verifica que un PIN elegido no esté en uso por otro cliente. */
+  private assertCodeFree(orgId: string, code: string, exceptId?: string): void {
+    const taken = this.list(orgId).some((m) => m.accessCode === code && m.id !== exceptId);
+    if (taken) throw new Error('Ese PIN ya está en uso por otro cliente');
+  }
+
   async create(orgId: string, input: NewMember, photo?: Blob | null): Promise<Member> {
     const id = crypto.randomUUID();
     const photoUrl = photo ? URL.createObjectURL(photo) : null;
-    const member = buildNewMember({
-      id,
-      code: generateMemberCode(),
-      accessCode: this.uniqueAccessCode(orgId),
-      input,
-      photoUrl,
-    });
+    let accessCode: string;
+    if (input.accessCode) {
+      this.assertCodeFree(orgId, input.accessCode);
+      accessCode = input.accessCode;
+    } else {
+      accessCode = this.uniqueAccessCode(orgId);
+    }
+    const member = buildNewMember({ id, code: generateMemberCode(), accessCode, input, photoUrl });
     this.list(orgId).unshift(member);
     return member;
   }
@@ -95,10 +102,16 @@ export class InMemoryMemberRepository implements MemberRepository {
     const prev = arr[idx]!;
     const firstName = patch.firstName?.trim() ?? prev.firstName;
     const lastName = patch.lastName?.trim() ?? prev.lastName;
+    let accessCode = prev.accessCode;
+    if (patch.accessCode) {
+      this.assertCodeFree(orgId, patch.accessCode, id);
+      accessCode = patch.accessCode;
+    }
     arr[idx] = {
       ...prev,
       firstName,
       lastName,
+      accessCode,
       searchName: normalizeSearch(`${firstName} ${lastName}`),
       phone: patch.phone !== undefined ? patch.phone.trim() || null : prev.phone,
       email: patch.email !== undefined ? patch.email.trim() || null : prev.email,

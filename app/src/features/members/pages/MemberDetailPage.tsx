@@ -31,6 +31,7 @@ import { useMemberMembership, useMemberPayments } from '@/features/billing/api/u
 import { useMemberCheckins, useRegisterCheckIn } from '@/features/checkin/api/useCheckin';
 import { useMemberMeasurements } from '@/features/measurements/api/useMeasurements';
 import { MeasurementSheet } from '@/features/measurements/components/MeasurementSheet';
+import { computeBMI } from '@/domain/measurement/measurement.entity';
 
 function formatDate(date: Date | null): string {
   if (!date) return 'Sin membresía';
@@ -79,6 +80,8 @@ export default function MemberDetailPage() {
       label: m.date.toLocaleDateString('es', { day: '2-digit', month: 'short' }),
       value: m.weightKg as number,
     }));
+  // Altura más reciente registrada, para calcular IMC en filas sin altura.
+  const latestHeight = (measurements ?? []).find((m) => m.heightCm != null)?.heightCm ?? null;
 
   async function onCheckIn() {
     if (!member) return;
@@ -263,31 +266,38 @@ export default function MemberDetailPage() {
                     <tr>
                       <th className="pb-2 font-medium">Fecha</th>
                       <th className="pb-2 text-right font-medium">Peso</th>
+                      <th className="pb-2 text-right font-medium">IMC</th>
                       <th className="pb-2 text-right font-medium">Grasa</th>
                       <th className="pb-2 text-right font-medium">Músculo</th>
                       <th className="pb-2 text-right font-medium">Cintura</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {(measurements ?? []).slice(0, 8).map((m) => (
-                      <tr key={m.id}>
-                        <td className="py-2 text-content-muted">
-                          {m.date.toLocaleDateString('es', { day: '2-digit', month: 'short' })}
-                        </td>
-                        <td className="py-2 text-right tabular text-content">
-                          {m.weightKg != null ? `${m.weightKg} kg` : '—'}
-                        </td>
-                        <td className="py-2 text-right tabular text-content-muted">
-                          {m.bodyFatPct != null ? `${m.bodyFatPct}%` : '—'}
-                        </td>
-                        <td className="py-2 text-right tabular text-content-muted">
-                          {m.muscleKg != null ? `${m.muscleKg} kg` : '—'}
-                        </td>
-                        <td className="py-2 text-right tabular text-content-muted">
-                          {m.waistCm != null ? `${m.waistCm} cm` : '—'}
-                        </td>
-                      </tr>
-                    ))}
+                    {(measurements ?? []).slice(0, 8).map((m) => {
+                      const bmi = computeBMI(m.weightKg, m.heightCm ?? latestHeight);
+                      return (
+                        <tr key={m.id}>
+                          <td className="py-2 text-content-muted">
+                            {m.date.toLocaleDateString('es', { day: '2-digit', month: 'short' })}
+                          </td>
+                          <td className="py-2 text-right tabular text-content">
+                            {m.weightKg != null ? `${m.weightKg} kg` : '—'}
+                          </td>
+                          <td className="py-2 text-right tabular text-content-muted">
+                            {bmi != null ? bmi : '—'}
+                          </td>
+                          <td className="py-2 text-right tabular text-content-muted">
+                            {m.bodyFatPct != null ? `${m.bodyFatPct}%` : '—'}
+                          </td>
+                          <td className="py-2 text-right tabular text-content-muted">
+                            {m.muscleKg != null ? `${m.muscleKg} kg` : '—'}
+                          </td>
+                          <td className="py-2 text-right tabular text-content-muted">
+                            {m.waistCm != null ? `${m.waistCm} cm` : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
