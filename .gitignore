@@ -3,10 +3,12 @@ node_modules/
 .pnp
 .pnp.js
 
-# builds
+# builds (output compilado; NO usar un patrón "lib/" genérico: también ignoraría
+# app/src/shared/lib, que es código fuente)
 dist/
 build/
-lib/
+packages/*/lib/
+functions/lib/
 *.tsbuildinfo
 
 # env
