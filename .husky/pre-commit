@@ -1,1 +1,4 @@
-npx lint-staged
+# Verificación no destructiva antes de commitear.
+# Evitamos lint-staged (usa `git stash` y puede perder archivos sin trackear).
+# El formateo se valida por separado; aquí solo lint de solo lectura.
+npm run lint --silent
