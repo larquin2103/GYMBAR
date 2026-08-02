@@ -97,9 +97,9 @@ npm run build --workspace @gymbar/shared
 firebase deploy --only functions
 ```
 
-Funciones desplegadas: `createOrganization`, `setUserRole`, `renewMembership`,
-`registerCheckIn`, `openCashSession`, `addCashMovement`, `closeCashSession`,
-`registerSale`, `healthcheck`.
+Funciones desplegadas: `createOrganization`, `inviteStaff`, `setUserRole`,
+`removeStaff`, `renewMembership`, `registerCheckIn`, `openCashSession`,
+`addCashMovement`, `closeCashSession`, `registerSale`, `healthcheck`.
 
 ---
 
@@ -120,10 +120,12 @@ node scripts/bootstrap-org.mjs "admin@tugimnasio.com" "UnaClaveFuerte123" "Mi Gi
 Salida esperada: *"Organización … creada"* y el usuario ya es admin. A partir de
 ahí, inicia sesión en la app con ese correo y contraseña.
 
-> Alta de más usuarios (recepción/entrenadores): créalos en **Authentication**
-> y, ya como admin, asígnales rol con la función `setUserRole` (la sección
-> *Usuarios* de la app mantiene el directorio; conectar la invitación + claims a
-> `setUserRole` es el siguiente paso de integración).
+> Alta de más usuarios (recepción/entrenadores): ya integrada de punta a punta.
+> Desde la app, en **Sistema → Usuarios → Agregar**, el admin crea la cuenta
+> (Cloud Function `inviteStaff`): se crea el acceso, se asignan los claims
+> (orgId + rol) y se muestra un **enlace para que el usuario defina su
+> contraseña**. Cambiar rol usa `setUserRole` y quitar personal usa
+> `removeStaff` (revoca los claims). No requiere pasos manuales en la consola.
 
 ---
 
