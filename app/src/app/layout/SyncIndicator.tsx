@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cloud, CloudOff, RefreshCw, Check, Loader2, Laptop } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, Check, Loader2, Laptop, Smartphone, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/shared/session/SessionContext';
 import { useSyncStatus, type SyncState } from '@/shared/sync/useSyncStatus';
+import {
+  subscribeDevices,
+  touchDevice,
+  removeDevice,
+  type DeviceInfo,
+} from '@/shared/sync/deviceRegistry';
 import { cn } from '@/shared/lib/cn';
 
 const META: Record<
@@ -62,9 +68,18 @@ export function SyncIndicator() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
+  const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const meta = META[status.state];
   const Icon = meta.icon;
+
+  // Registra este dispositivo y escucha en vivo la lista de vinculados.
+  useEffect(() => {
+    if (!status.cloud || !organizationId) return;
+    void touchDevice(organizationId);
+    const unsub = subscribeDevices(organizationId, setDevices);
+    return unsub;
+  }, [status.cloud, organizationId]);
 
   useEffect(() => {
     if (!open) return;
@@ -143,6 +158,50 @@ export function SyncIndicator() {
                 En otro dispositivo, inicia sesión con la misma cuenta del gimnasio para ver los
                 mismos datos.
               </p>
+
+              {/* Dispositivos vinculados */}
+              <div className="border-t border-border pt-2.5">
+                <div className="mb-1.5 font-medium text-content-muted">
+                  Dispositivos vinculados{devices.length > 0 ? ` (${devices.length})` : ''}
+                </div>
+                {devices.length === 0 ? (
+                  <div className="text-content-muted">Registrando este dispositivo…</div>
+                ) : (
+                  <ul className="max-h-40 space-y-1 overflow-y-auto">
+                    {devices.map((dv) => {
+                      const Mobile = /Android|iOS/.test(dv.label);
+                      const DevIcon = Mobile ? Smartphone : Laptop;
+                      return (
+                        <li key={dv.id} className="flex items-center gap-2 rounded-md px-1.5 py-1">
+                          <DevIcon className="h-3.5 w-3.5 shrink-0 text-content-muted" aria-hidden />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-content">
+                              {dv.label}
+                              {dv.isThis && (
+                                <span className="ml-1 text-[10px] text-primary">· este</span>
+                              )}
+                            </span>
+                            <span className="block text-[10px] text-content-muted">
+                              {relativeTime(dv.lastSeenAt)}
+                            </span>
+                          </span>
+                          {!dv.isThis && (
+                            <button
+                              type="button"
+                              onClick={() => removeDevice(organizationId, dv.id)}
+                              className="shrink-0 text-content-muted hover:text-state-expired"
+                              aria-label="Desvincular dispositivo"
+                              title="Desvincular"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
           ) : (
             <div className="px-4 py-3 text-xs text-content-muted">

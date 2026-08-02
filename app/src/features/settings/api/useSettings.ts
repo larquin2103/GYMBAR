@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { OrganizationSettingsInput } from '@/domain/organization/organization.entity';
+import type {
+  OrganizationSettings,
+  OrganizationSettingsInput,
+} from '@/domain/organization/organization.entity';
 import { getOperationalData } from '@/data/operational.factory';
 import { useSession } from '@/shared/session/SessionContext';
 
@@ -19,6 +22,14 @@ export function useUpdateOrgSettings() {
   return useMutation({
     mutationFn: (input: OrganizationSettingsInput) =>
       organization.updateSettings(organizationId, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['org-settings', organizationId] }),
+    onSuccess: (_res, input) => {
+      // Refleja el cambio de inmediato en la caché (sidebar, formulario…) sin
+      // depender de un refetch que en redes lentas podría devolver datos viejos.
+      qc.setQueryData(
+        ['org-settings', organizationId],
+        (old: OrganizationSettings | undefined) => (old ? { ...old, ...input } : old),
+      );
+      qc.invalidateQueries({ queryKey: ['org-settings', organizationId] });
+    },
   });
 }

@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [address, setAddress] = useState('');
   const [kioskBlock, setKioskBlock] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (settings) {
@@ -34,15 +35,20 @@ export default function SettingsPage() {
   }, [settings]);
 
   async function onSave() {
-    await update.mutateAsync({
-      name: name.trim() || 'Mi Gimnasio',
-      currency,
-      phone: phone.trim() || null,
-      address: address.trim() || null,
-      kioskBlockExpired: kioskBlock,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setError(null);
+    try {
+      await update.mutateAsync({
+        name: name.trim() || 'Mi Gimnasio',
+        currency,
+        phone: phone.trim() || null,
+        address: address.trim() || null,
+        kioskBlockExpired: kioskBlock,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo guardar. Revisa tu conexión.');
+    }
   }
 
   return (
@@ -134,6 +140,7 @@ export default function SettingsPage() {
                 Guardado
               </span>
             )}
+            {error && <span className="text-sm text-state-expired">{error}</span>}
           </div>
         </div>
       )}

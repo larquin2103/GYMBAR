@@ -367,10 +367,14 @@ export class FirestoreOrganizationRepository implements OrganizationRepository {
     };
   }
   async updateSettings(orgId: string, input: OrganizationSettingsInput): Promise<void> {
-    await updateDoc(doc(this.db, 'organizations', orgId), {
-      ...input,
-      updatedAt: Timestamp.fromDate(new Date()),
-    });
+    // setDoc con merge: crea el documento si no existe (evita "No document to
+    // update") y fusiona si existe. Idempotente y a prueba de cuentas sin
+    // onboarding completo.
+    await setDoc(
+      doc(this.db, 'organizations', orgId),
+      { ...input, updatedAt: Timestamp.fromDate(new Date()) },
+      { merge: true },
+    );
   }
 }
 
