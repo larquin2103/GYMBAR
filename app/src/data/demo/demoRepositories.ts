@@ -18,7 +18,7 @@ import type {
   StaffUser,
   StaffInput,
   StaffRepository,
-  AddStaffResult,
+  StaffPatch,
 } from '@/domain/staff/staff.entity';
 import type {
   ExpiringRow,
@@ -42,7 +42,6 @@ import type {
   AdjustStockInput,
   InventoryRepository,
 } from '@/domain/product/product.entity';
-import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import {
   isMembershipActive,
@@ -51,7 +50,7 @@ import {
   daysUntilExpiry,
 } from '@/domain/membership/membership.logic';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
-import { getDemoData } from './demoStore';
+import { getDemoData, type DemoStaff } from './demoStore';
 
 const byNewest = <T extends { createdAt: Date }>(a: T, b: T) =>
   b.createdAt.getTime() - a.createdAt.getTime();
@@ -216,28 +215,51 @@ export class InMemoryOrganizationRepository implements OrganizationRepository {
   }
 }
 
+const stripPin = (s: DemoStaff): StaffUser => {
+  const { pin: _pin, ...rest } = s;
+  void _pin;
+  return rest;
+};
+
 export class InMemoryStaffRepository implements StaffRepository {
   async list(orgId: string): Promise<StaffUser[]> {
-    return getDemoData(orgId).staff.slice();
+    return getDemoData(orgId).staff.map(stripPin);
   }
-  async add(orgId: string, input: StaffInput): Promise<AddStaffResult> {
+  async add(orgId: string, input: StaffInput): Promise<StaffUser> {
     const staff = getDemoData(orgId).staff;
     if (staff.some((s) => s.email.toLowerCase() === input.email.toLowerCase())) {
       throw new Error('Ya existe un usuario con ese correo');
     }
-    const user: StaffUser = { id: crypto.randomUUID(), ...input, createdAt: new Date() };
+    const user: DemoStaff = {
+      id: crypto.randomUUID(),
+      displayName: input.displayName,
+      email: input.email,
+      role: input.role,
+      active: true,
+      pin: input.pin || '0000',
+      createdAt: new Date(),
+    };
     staff.push(user);
-    // En demo no hay Auth real: no se genera enlace de invitación.
-    return { ...user, inviteLink: null };
+    return stripPin(user);
   }
-  async updateRole(orgId: string, id: string, role: Role): Promise<void> {
+  async update(orgId: string, id: string, patch: StaffPatch): Promise<void> {
     const user = getDemoData(orgId).staff.find((s) => s.id === id);
-    if (user) user.role = role;
+    if (!user) return;
+    if (patch.displayName !== undefined) user.displayName = patch.displayName;
+    if (patch.email !== undefined) user.email = patch.email;
+    if (patch.role !== undefined) user.role = patch.role;
+    if (patch.active !== undefined) user.active = patch.active;
+    if (patch.pin) user.pin = patch.pin;
   }
   async remove(orgId: string, id: string): Promise<void> {
     const data = getDemoData(orgId);
     if (id === 'demo-admin') throw new Error('No puedes eliminar al administrador principal');
     data.staff = data.staff.filter((s) => s.id !== id);
+  }
+  async verifyPin(orgId: string, id: string, pin: string): Promise<StaffUser | null> {
+    const user = getDemoData(orgId).staff.find((s) => s.id === id);
+    if (!user || !user.active || user.pin !== pin) return null;
+    return stripPin(user);
   }
 }
 

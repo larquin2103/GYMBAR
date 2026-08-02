@@ -36,8 +36,9 @@ import type {
   StaffUser,
   StaffInput,
   StaffRepository,
-  AddStaffResult,
+  StaffPatch,
 } from '@/domain/staff/staff.entity';
+import { hashPin, verifyPinHash } from '@/shared/lib/pin';
 import type {
   ExpiringRow,
   RosterRow,
@@ -373,6 +374,17 @@ export class FirestoreOrganizationRepository implements OrganizationRepository {
   }
 }
 
+function toStaff(id: string, x: DocumentData): StaffUser {
+  return {
+    id,
+    displayName: x.displayName ?? '',
+    email: x.email ?? '',
+    role: (x.role ?? 'reception') as Role,
+    active: x.active ?? true,
+    createdAt: d(x.createdAt),
+  };
+}
+
 export class FirestoreStaffRepository implements StaffRepository {
   constructor(private db: Firestore) {}
   private col(orgId: string) {
@@ -380,36 +392,50 @@ export class FirestoreStaffRepository implements StaffRepository {
   }
   async list(orgId: string): Promise<StaffUser[]> {
     const snap = await getDocs(this.col(orgId));
-    return snap.docs.map((s) => {
-      const x = s.data();
-      return {
-        id: s.id,
-        displayName: x.displayName ?? '',
-        email: x.email ?? '',
-        role: (x.role ?? 'reception') as Role,
-        createdAt: d(x.createdAt),
-      };
-    });
+    return snap.docs.map((s) => toStaff(s.id, s.data()));
   }
-  async add(orgId: string, input: StaffInput): Promise<AddStaffResult> {
-    // Modo sin Functions: registra el directorio del personal. El acceso real
-    // (cuenta + custom claims) se otorga con el script local scripts/set-staff-role.mjs
-    // (ver docs/13). No se puede asignar claims desde el navegador.
+  async add(orgId: string, input: StaffInput): Promise<StaffUser> {
+    // Usuario interno del gimnasio (comparte la cuenta de nube). El PIN se guarda
+    // hasheado; no es una cuenta de Firebase (ver docs/13).
     const ref = doc(this.col(orgId));
     const now = new Date();
+    const pinHash = input.pin ? await hashPin(input.pin, ref.id) : null;
     await setDoc(ref, {
       displayName: input.displayName,
       email: input.email.toLowerCase(),
       role: input.role,
+      active: true,
+      pinHash,
       createdAt: Timestamp.fromDate(now),
     });
-    return { id: ref.id, ...input, createdAt: now, inviteLink: null };
+    return {
+      id: ref.id,
+      displayName: input.displayName,
+      email: input.email,
+      role: input.role,
+      active: true,
+      createdAt: now,
+    };
   }
-  async updateRole(orgId: string, id: string, role: Role): Promise<void> {
-    await updateDoc(doc(this.col(orgId), id), { role });
+  async update(orgId: string, id: string, patch: StaffPatch): Promise<void> {
+    const partial: Record<string, unknown> = {};
+    if (patch.displayName !== undefined) partial.displayName = patch.displayName;
+    if (patch.email !== undefined) partial.email = patch.email.toLowerCase();
+    if (patch.role !== undefined) partial.role = patch.role;
+    if (patch.active !== undefined) partial.active = patch.active;
+    if (patch.pin) partial.pinHash = await hashPin(patch.pin, id);
+    await updateDoc(doc(this.col(orgId), id), partial);
   }
   async remove(orgId: string, id: string): Promise<void> {
     await deleteDoc(doc(this.col(orgId), id));
+  }
+  async verifyPin(orgId: string, id: string, pin: string): Promise<StaffUser | null> {
+    const snap = await getDoc(doc(this.col(orgId), id));
+    if (!snap.exists()) return null;
+    const x = snap.data();
+    if (x.active === false) return null;
+    const ok = await verifyPinHash(pin, id, x.pinHash);
+    return ok ? toStaff(snap.id, x) : null;
   }
 }
 

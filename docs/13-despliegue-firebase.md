@@ -92,51 +92,38 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 ---
 
-## 5. Operaciones sin Cloud Functions (modo plan gratuito)
+## 5. Modelo de autenticación (una cuenta por gimnasio)
 
-> **Este proyecto está configurado para el plan gratuito (Spark).** Las Cloud
-> Functions (Gen 2) requieren el plan Blaze, así que **no se despliegan**. En su
-> lugar, las operaciones sensibles (cobros, caja, check-in, ventas) se ejecutan
-> en el cliente con **transacciones de Firestore**, y las Reglas de Seguridad
-> controlan quién puede escribir. `firebase.json` ya no incluye `functions`.
+> **Plan gratuito (Spark), sin Cloud Functions ni Storage.** El modelo sigue el
+> de contamypime:
+>
+> - **Una cuenta de Firebase por gimnasio.** El `uid` de esa cuenta **es** el
+>   `organizationId`; todos los datos cuelgan de `/organizations/{uid}`.
+> - **Sin custom claims.** Las Reglas solo comprueban `auth.uid == orgId`. Los
+>   **roles del personal son datos internos de la app** (login por PIN).
+> - **Operaciones en el cliente** (cobros, caja, check-in, ventas) con
+>   transacciones de Firestore. `firebase.json` no incluye `functions`.
 
-Compromiso consciente: sin servidor, la integridad se apoya en las reglas y en
-la confianza del personal (un solo gimnasio). Si más adelante activas Blaze,
-el código de `functions/` sigue en el repo para volver al modo server-authoritative.
-
-**No hay nada que desplegar en este paso.** Continúa con el bootstrap.
+No hay scripts ni cuentas de servicio: **todo se crea desde la app**. El código
+de `functions/` queda en el repo por si algún día activas Blaze.
 
 ---
 
-## 6. Crear el primer administrador (bootstrap)
+## 6. Crear el gimnasio y el administrador (desde la app)
 
-Asignar roles (custom claims) necesita el Admin SDK, que **sí funciona en el plan
-gratuito** ejecutándolo tú localmente. Usa el script del repo:
+Tras desplegar (pasos 4 y 7), abre la app y:
 
-1. Consola → **Configuración del proyecto → Cuentas de servicio → Generar nueva
-   clave privada**. Guarda el JSON (p. ej. `sa.json`, **no lo subas a git**).
-2. Ejecuta:
+1. En la pantalla de acceso, pestaña **“Crear gimnasio”**.
+2. Completa: **nombre del gimnasio**, **correo** y **contraseña** (será la cuenta
+   de nube, una por gimnasio), tu **nombre** y un **PIN** de 4–6 dígitos.
+3. Listo: entras como administrador. Esa cuenta (correo + contraseña) es la que
+   usarás para **vincular otros dispositivos** (cada uno inicia sesión con ella y
+   luego elige su usuario por PIN).
 
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS=./sa.json
-node scripts/bootstrap-org.mjs "admin@tugimnasio.com" "UnaClaveFuerte123" "Mi Gimnasio"
-```
-
-Salida esperada: *"Organización … creada: <orgId>"* y el usuario ya es admin.
-**Anota el `<orgId>`** (lo necesitas para dar de alta más personal). Inicia
-sesión en la app con ese correo y contraseña.
-
-> **Alta de más usuarios (recepción/entrenadores):** desde la app, en
-> **Sistema → Usuarios → Agregar**, el admin lo registra en el directorio. Para
-> darle **acceso real** (cuenta + contraseña + rol), ejecuta el script local:
->
-> ```bash
-> export GOOGLE_APPLICATION_CREDENTIALS=./sa.json
-> node scripts/set-staff-role.mjs <orgId> "recepcion@tugimnasio.com" "ClaveTemporal123" reception "Nombre"
-> ```
->
-> `role ∈ admin | reception | trainer`. La persona luego inicia sesión con ese
-> correo y contraseña. (Con Blaze, esto se haría desde la app sin script.)
+> **Alta de más usuarios (recepción/entrenadores):** en **Sistema → Usuarios →
+> Agregar**, defines nombre, rol y **PIN**. Todos comparten la cuenta de nube del
+> gimnasio y se distinguen por su PIN (botón **Cambiar usuario** en el menú de
+> cuenta). No hay que tocar la consola de Firebase.
 
 ---
 
@@ -176,9 +163,9 @@ firebase deploy      # firestore rules + indexes + hosting (sin functions ni sto
 
 - **PWA / offline**: Firestore usa caché persistente (IndexedDB, multipestaña);
   el check-in funciona offline y sincroniza al reconectar.
-- **Multi-tenant**: cada gimnasio es una organización aislada bajo
-  `organizations/{orgId}`; los claims deciden el acceso, nunca el cliente.
-- **Entornos**: `.firebaserc` define `default`/`staging`/`prod`. Cambia con
-  `firebase use <alias>` antes de cada `deploy`.
-- **Secretos**: nunca subas `app/.env.local` ni el JSON de la cuenta de
-  servicio (ya cubiertos por `.gitignore`).
+- **Multi-tenant**: cada gimnasio es una cuenta de Firebase aislada bajo
+  `organizations/{uid}`; el acceso se decide por `auth.uid == orgId`.
+- **Multi-dispositivo**: en otro equipo, inicia sesión con el mismo correo y
+  contraseña del gimnasio; los datos se sincronizan vía Firestore. Cada persona
+  elige su usuario por PIN.
+- **Secretos**: nunca subas `app/.env.local` (ya cubierto por `.gitignore`).

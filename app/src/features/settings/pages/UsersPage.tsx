@@ -13,7 +13,7 @@ const ROLES: Role[] = ['admin', 'reception', 'trainer'];
 export default function UsersPage() {
   const { uid } = useSession();
   const { data: staff, isLoading } = useStaff();
-  const { updateRole, remove } = useStaffMutations();
+  const { update, remove } = useStaffMutations();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
@@ -69,7 +69,7 @@ export default function UsersPage() {
                       <select
                         value={u.role}
                         disabled={isSelf}
-                        onChange={(e) => updateRole.mutate({ id: u.id, role: e.target.value as Role })}
+                        onChange={(e) => update.mutate({ id: u.id, patch: { role: e.target.value as Role } })}
                         className="h-9 rounded-md border border-border bg-bg px-2 text-sm text-content disabled:opacity-60"
                       >
                         {ROLES.map((r) => (

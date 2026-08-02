@@ -1,132 +1,25 @@
 rules_version = '2';
 
-// Aislamiento multi-tenant estructural (ver docs/04 y docs/05).
-// Todo dato vive bajo /organizations/{orgId}; el acceso se decide comparando el
-// orgId de la ruta contra el claim del token. Nunca se confía en el cliente.
+// Modelo de una cuenta por gimnasio (ver docs/13, patrón contamypime).
+// Cada gimnasio es una cuenta de Firebase cuyo uid ES el organizationId; todos
+// sus datos cuelgan de /organizations/{orgId}. Solo quien inició sesión con esa
+// cuenta (auth.uid == orgId) puede leer/escribir. Los roles del personal son
+// datos internos de la app (login por PIN), no permisos de Firebase.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() { return request.auth != null; }
-    function orgId()       { return request.auth.token.orgId; }
-    function role()        { return request.auth.token.role; }
-    function inOrg(oid)    { return isSignedIn() && orgId() == oid; }
-    function isAdmin()     { return isSignedIn() && role() == 'admin'; }
-    function isReception() { return isSignedIn() && (role() == 'reception' || role() == 'admin'); }
-    function isStaff()     { return isSignedIn() && (role() == 'admin' || role() == 'reception' || role() == 'trainer'); }
-
-    // Índice global uid -> organización. Solo el propio usuario lo lee.
-    match /users/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow write: if false; // gestionado por Cloud Functions
+    function isGym(orgId) {
+      return request.auth != null && request.auth.uid == orgId;
     }
 
-    match /organizations/{oid} {
-      allow read:  if inOrg(oid);
-      allow write: if inOrg(oid) && isAdmin();
+    match /organizations/{orgId} {
+      allow read, write: if isGym(orgId);
 
-      match /members/{id} {
-        allow read:           if inOrg(oid) && isStaff();
-        allow create, update: if inOrg(oid) && isReception();
-        // Cualquier staff (incl. entrenador) puede sellar el check-in: solo
-        // puede tocar lastCheckInAt/updatedAt, nada más.
-        allow update:         if inOrg(oid) && isStaff()
-                                && request.resource.data.diff(resource.data)
-                                     .affectedKeys().hasOnly(['lastCheckInAt', 'updatedAt']);
-        allow delete:         if inOrg(oid) && isAdmin();
+      // Todo el árbol de datos del gimnasio (miembros, pagos, ventas, caja,
+      // rutinas, personal, etc.). Aislamiento por tenant vía uid == orgId.
+      match /{document=**} {
+        allow read, write: if isGym(orgId);
       }
-
-      match /plans/{id} {
-        allow read:  if inOrg(oid) && isStaff();
-        allow write: if inOrg(oid) && isAdmin();
-      }
-
-      // Directorio de personal. Modo sin Functions: el admin mantiene el
-      // directorio desde la app. El acceso real (cuenta + custom claims) se
-      // otorga con el script local set-staff-role.mjs (ver docs/13).
-      match /staff/{id} {
-        allow read:  if inOrg(oid) && isStaff();
-        allow write: if inOrg(oid) && isAdmin();
-      }
-
-      // Medidas del cliente (subcolección). Staff del tenant.
-      match /members/{mid}/measurements/{id} {
-        allow read, write: if inOrg(oid) && isStaff();
-      }
-
-      // Rutinas de entrenamiento. Las gestiona el staff (entrenadores incluidos).
-      match /routines/{id} {
-        allow read, write: if inOrg(oid) && isStaff();
-      }
-
-      // Catálogo de productos. Lo mantiene recepción/admin; lo ve el staff.
-      match /products/{id} {
-        allow read:  if inOrg(oid) && isStaff();
-        allow write: if inOrg(oid) && isReception();
-      }
-
-      // Libro de inventario. Las entradas/ajustes las hace recepción (adjustStock,
-      // transaccional en cliente); las de venta las escribe registerSale (server).
-      match /stockMovements/{id} {
-        allow read:  if inOrg(oid) && isReception();
-        allow write: if inOrg(oid) && isReception();
-      }
-
-      // Ventas (modo sin Functions): las registra recepción/admin con una
-      // transacción en el cliente. Inmutables una vez creadas.
-      match /sales/{id} {
-        allow read:   if inOrg(oid) && isReception();
-        allow create: if inOrg(oid) && isReception();
-        allow update, delete: if false;
-      }
-
-      // Membresías (modo sin Functions): las crea recepción/admin al cobrar
-      // (renewMembership en cliente). No se editan ni borran.
-      match /memberships/{id} {
-        allow read:   if inOrg(oid) && isStaff();
-        allow create: if inOrg(oid) && isReception();
-        allow update, delete: if false;
-      }
-
-      // Pagos (modo sin Functions): los crea recepción/admin al cobrar.
-      // Inmutables (sin update/delete).
-      match /payments/{id} {
-        allow read:   if inOrg(oid) && isReception();
-        allow create: if inOrg(oid) && isReception();
-        allow update, delete: if false;
-      }
-
-      // Check-ins (modo sin Functions): los crea cualquier staff. Inmutables.
-      match /checkins/{id} {
-        allow read:   if inOrg(oid) && isStaff();
-        allow create: if inOrg(oid) && isStaff();
-        allow update, delete: if false;
-      }
-
-      // Caja (modo sin Functions): apertura (create) y cierre (update) por
-      // recepción/admin; los totales se calculan en el cliente.
-      match /cashSessions/{id} {
-        allow read:   if inOrg(oid) && isReception();
-        allow create: if inOrg(oid) && isReception();
-        allow update: if inOrg(oid) && isReception();
-        allow delete: if false;
-
-        match /movements/{mid} {
-          allow read:   if inOrg(oid) && isReception();
-          allow create: if inOrg(oid) && isReception();
-          allow update, delete: if false;
-        }
-      }
-
-      // Contadores/rollups: solo lectura para staff; los escribe Cloud Functions.
-      match /counters/{id} {
-        allow read:  if inOrg(oid) && isStaff();
-        allow write: if false;
-      }
-
-      // Sin catch-all recursivo a propósito: en Firestore las reglas se combinan
-      // con OR, así que un comodín permisivo anularía las restricciones de arriba
-      // (pagos y ventas inmutables, etc.). Deny-by-default. Cada colección nueva
-      // declara su propia regla explícita (ver docs/12 y docs/13).
     }
   }
 }

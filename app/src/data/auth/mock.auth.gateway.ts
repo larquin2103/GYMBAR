@@ -1,55 +1,53 @@
-import type { AuthGateway, Session } from '@/domain/auth/session';
+import type { AuthGateway, GymAccount } from '@/domain/auth/session';
 import { DEMO_ORG_ID } from '@/data/demo/demoStore';
 
-const STORAGE_KEY = 'gymbar-demo-session';
+const STORAGE_KEY = 'gymbar-demo-gym';
 
-const DEMO_SESSION: Session = {
-  uid: 'demo-admin',
-  displayName: 'Administrador demo',
+const DEMO_GYM: GymAccount = {
+  orgId: DEMO_ORG_ID,
+  orgName: 'Mi Gimnasio',
   email: 'demo@gymbar.app',
-  organizationId: DEMO_ORG_ID,
-  organizationName: 'Mi Gimnasio',
-  role: 'admin',
 };
 
 /**
- * Gateway de autenticación simulado para dev/demo (sin Firebase). Permite
- * demostrar el flujo real de login/guard: arranca desconectado y cualquier
- * credencial válida por forma inicia sesión como admin demo. La sesión se
- * persiste para sobrevivir recargas.
+ * Gateway simulado (dev/demo, sin Firebase). Reproduce el flujo real: el gimnasio
+ * arranca desconectado; cualquier credencial conecta la cuenta demo. Luego se
+ * elige un usuario interno con PIN (ver seedStaff). La conexión se persiste.
  */
 export class MockAuthGateway implements AuthGateway {
-  private listeners = new Set<(s: Session | null) => void>();
-  private session: Session | null = null;
+  private listeners = new Set<(g: GymAccount | null) => void>();
+  private gym: GymAccount | null = null;
 
   constructor() {
     try {
-      this.session = sessionStorage.getItem(STORAGE_KEY) ? DEMO_SESSION : null;
+      this.gym = sessionStorage.getItem(STORAGE_KEY) ? DEMO_GYM : null;
     } catch {
-      this.session = null;
+      this.gym = null;
     }
   }
 
-  observeSession(callback: (session: Session | null) => void): () => void {
+  observeGym(callback: (gym: GymAccount | null) => void): () => void {
     this.listeners.add(callback);
-    callback(this.session);
+    callback(this.gym);
     return () => this.listeners.delete(callback);
   }
 
   async signIn(email: string, password: string): Promise<void> {
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 200));
     if (!email || !password) throw new Error('Ingresa correo y contraseña.');
-    this.session = { ...DEMO_SESSION, email };
-    try {
-      sessionStorage.setItem(STORAGE_KEY, '1');
-    } catch {
-      // ignore
-    }
-    this.emit();
+    this.connect({ ...DEMO_GYM, email });
+  }
+
+  async createGym(email: string, _password: string, gymName: string): Promise<GymAccount> {
+    void _password;
+    await new Promise((r) => setTimeout(r, 200));
+    const gym = { orgId: DEMO_ORG_ID, orgName: gymName.trim() || 'Mi Gimnasio', email };
+    this.connect(gym);
+    return gym;
   }
 
   async signOut(): Promise<void> {
-    this.session = null;
+    this.gym = null;
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -58,7 +56,17 @@ export class MockAuthGateway implements AuthGateway {
     this.emit();
   }
 
+  private connect(gym: GymAccount) {
+    this.gym = gym;
+    try {
+      sessionStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // ignore
+    }
+    this.emit();
+  }
+
   private emit() {
-    for (const l of this.listeners) l(this.session);
+    for (const l of this.listeners) l(this.gym);
   }
 }

@@ -8,6 +8,11 @@ import type { CashSession, CashMovement } from '@/domain/cashbox/cashbox.entity'
 import type { Measurement } from '@/domain/measurement/measurement.entity';
 import type { OrganizationSettings } from '@/domain/organization/organization.entity';
 import type { StaffUser } from '@/domain/staff/staff.entity';
+
+/** Personal en el store demo: incluye el PIN (en claro; solo memoria de demo). */
+export interface DemoStaff extends StaffUser {
+  pin: string;
+}
 import type { Routine } from '@/domain/routine/routine.entity';
 import type { Product, StockMovement, Sale } from '@/domain/product/product.entity';
 import { addDays, startOfDay } from '@/domain/membership/membership.logic';
@@ -30,7 +35,7 @@ export interface DemoData {
   stockMovements: StockMovement[];
   sales: Sale[];
   settings: OrganizationSettings;
-  staff: StaffUser[];
+  staff: DemoStaff[];
   receiptSeq: number;
 }
 
@@ -44,11 +49,11 @@ function defaultSettings(): OrganizationSettings {
   };
 }
 
-function seedStaff(now: Date): StaffUser[] {
+function seedStaff(now: Date): DemoStaff[] {
   return [
-    { id: 'demo-admin', displayName: 'Administrador demo', email: 'demo@gymbar.app', role: 'admin', createdAt: now },
-    { id: crypto.randomUUID(), displayName: 'Recepción', email: 'recepcion@gymbar.app', role: 'reception', createdAt: now },
-    { id: crypto.randomUUID(), displayName: 'Entrenador', email: 'coach@gymbar.app', role: 'trainer', createdAt: now },
+    { id: 'demo-admin', displayName: 'Administrador demo', email: 'demo@gymbar.app', role: 'admin', active: true, pin: '1234', createdAt: now },
+    { id: crypto.randomUUID(), displayName: 'Recepción', email: 'recepcion@gymbar.app', role: 'reception', active: true, pin: '2345', createdAt: now },
+    { id: crypto.randomUUID(), displayName: 'Entrenador', email: 'coach@gymbar.app', role: 'trainer', active: true, pin: '3456', createdAt: now },
   ];
 }
 

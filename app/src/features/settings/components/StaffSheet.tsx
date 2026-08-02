@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Check, Copy, Link2 } from 'lucide-react';
 import type { Role } from '@gymbar/shared';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Button } from '@/shared/ui/Button';
 import { Field, Input } from '@/shared/ui/Field';
 import { cn } from '@/shared/lib/cn';
+import { isValidPin } from '@/shared/lib/pin';
 import { useStaffMutations } from '../api/useStaff';
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -15,137 +15,54 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 const ROLE_HINTS: Record<Role, string> = {
   admin: 'Acceso total, incluida configuración y usuarios.',
-  reception: 'Operación y gestión (sin configuración ni anular pagos).',
-  trainer: 'Clientes asignados, rutinas, medidas y check-in.',
+  reception: 'Operación y gestión (sin configuración).',
+  trainer: 'Clientes, rutinas, medidas y check-in.',
 };
-
-interface Done {
-  displayName: string;
-  email: string;
-  role: Role;
-  inviteLink: string | null;
-}
 
 export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { add } = useStaffMutations();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('reception');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<Done | null>(null);
-  const [copied, setCopied] = useState(false);
 
   function reset() {
     setDisplayName('');
     setEmail('');
     setRole('reception');
+    setPin('');
     setError(null);
-    setDone(null);
-    setCopied(false);
-  }
-
-  function close() {
-    reset();
-    onClose();
   }
 
   async function onSubmit() {
     setError(null);
     if (!displayName.trim()) return setError('Ingresa el nombre.');
-    if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) return setError('Correo inválido.');
+    if (email && !/^[^@]+@[^@]+\.[^@]+$/.test(email)) return setError('Correo inválido.');
+    if (!isValidPin(pin)) return setError('El PIN debe tener 4 a 6 dígitos.');
     try {
-      const result = await add.mutateAsync({
+      await add.mutateAsync({
         displayName: displayName.trim(),
-        email: email.trim(),
+        email: email.trim() || `${displayName.trim().toLowerCase().replace(/\s+/g, '.')}@local`,
         role,
-      });
-      setDone({
-        displayName: result.displayName,
-        email: result.email,
-        role: result.role,
-        inviteLink: result.inviteLink ?? null,
+        pin,
       });
     } catch (err) {
       return setError(err instanceof Error ? err.message : 'No se pudo agregar.');
     }
-  }
-
-  async function copyLink() {
-    if (!done?.inviteLink) return;
-    try {
-      await navigator.clipboard.writeText(done.inviteLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  // Vista de confirmación tras el alta.
-  if (done) {
-    return (
-      <Sheet
-        open={open}
-        onClose={close}
-        title="Usuario agregado"
-        description={`${done.displayName} · ${done.email}`}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" type="button" onClick={reset}>
-              Agregar otro
-            </Button>
-            <Button type="button" onClick={close}>
-              Listo
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 rounded-md bg-state-active/10 px-3 py-2.5 text-sm text-state-active">
-            <Check className="h-4 w-4 shrink-0" />
-            Registrado en el directorio del personal.
-          </div>
-
-          {done.inviteLink ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-content">
-                <Link2 className="h-4 w-4 text-content-muted" />
-                Enlace para definir contraseña
-              </div>
-              <p className="text-xs text-content-muted">
-                Compártelo con la persona para que establezca su contraseña e ingrese.
-              </p>
-              <div className="flex items-center gap-2">
-                <Input readOnly value={done.inviteLink} className="text-xs" />
-                <Button variant="secondary" size="sm" onClick={copyLink} className="shrink-0">
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied ? 'Copiado' : 'Copiar'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-md border border-border p-3 text-sm text-content-muted">
-              Para darle acceso real (cuenta y contraseña), ejecuta en tu PC:
-              <pre className="mt-2 overflow-x-auto rounded bg-surface px-2 py-1.5 text-xs text-content">
-                node scripts/set-staff-role.mjs &lt;orgId&gt; {done.email} &lt;password&gt; {done.role}
-              </pre>
-              <span className="mt-1 block text-xs">Detalles en docs/13.</span>
-            </div>
-          )}
-        </div>
-      </Sheet>
-    );
+    reset();
+    onClose();
   }
 
   return (
     <Sheet
       open={open}
-      onClose={close}
+      onClose={onClose}
       title="Agregar usuario"
-      description="Registra a un integrante del personal"
+      description="Personal que inicia sesión con un PIN"
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" type="button" onClick={close}>
+          <Button variant="secondary" type="button" onClick={onClose}>
             Cancelar
           </Button>
           <Button onClick={onSubmit} loading={add.isPending}>
@@ -156,13 +73,9 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
     >
       <div className="space-y-5">
         <Field label="Nombre" htmlFor="staff-name" required>
-          <Input
-            id="staff-name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
+          <Input id="staff-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </Field>
-        <Field label="Correo" htmlFor="staff-email" required>
+        <Field label="Correo (opcional)" htmlFor="staff-email">
           <Input
             id="staff-email"
             type="email"
@@ -170,6 +83,16 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
+        <Field label="PIN (4–6 dígitos)" htmlFor="staff-pin" hint="Lo usará para iniciar sesión" required>
+          <Input
+            id="staff-pin"
+            inputMode="numeric"
+            maxLength={6}
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+          />
+        </Field>
+
         <div>
           <div className="mb-2 text-sm font-medium text-content">Rol</div>
           <div className="space-y-2">
@@ -194,15 +117,12 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
         </div>
 
         {error && (
-          <p className="rounded-md bg-state-expired/10 px-3 py-2 text-sm text-state-expired">
-            {error}
-          </p>
+          <p className="rounded-md bg-state-expired/10 px-3 py-2 text-sm text-state-expired">{error}</p>
         )}
 
         <p className="text-xs text-content-muted">
-          Esto registra a la persona en el directorio. Para darle acceso real (cuenta y
-          contraseña) ejecuta el script <span className="tabular">set-staff-role.mjs</span> con su
-          correo y rol. Ver docs/13.
+          Los usuarios comparten la cuenta de nube del gimnasio y se distinguen por su PIN. Podrás
+          cambiar de usuario sin cerrar la sesión del gimnasio.
         </p>
       </div>
     </Sheet>
