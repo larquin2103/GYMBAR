@@ -5,9 +5,11 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { Button } from '@/shared/ui/Button';
 import { Field, Input } from '@/shared/ui/Field';
 import { cn } from '@/shared/lib/cn';
+import { useOrgSettings } from '@/features/settings/api/useSettings';
 import { usePlanMutations } from '../api/useBilling';
 
-const CURRENCY = 'CUP';
+/** Etiqueta corta de la moneda (CUP se muestra como MN, convención local). */
+const currencyLabel = (code: string) => (code === 'CUP' ? 'MN' : code);
 
 const TYPES: { value: PlanType; label: string; days: number }[] = [
   { value: 'daily', label: 'Diario', days: 1 },
@@ -29,6 +31,10 @@ export function PlanSheet({
 }) {
   const isEdit = !!plan;
   const { create, update } = usePlanMutations();
+  const { data: settings } = useOrgSettings();
+  // Al crear, la moneda por defecto es la de Configuración; al editar se
+  // conserva la del plan (los importes ya cobrados guardan su moneda).
+  const currency = plan?.currency ?? settings?.currency ?? 'CUP';
 
   const [name, setName] = useState(plan?.name ?? '');
   const [type, setType] = useState<PlanType>(plan?.type ?? 'monthly');
@@ -57,7 +63,7 @@ export function PlanSheet({
       name: name.trim(),
       type,
       priceCents,
-      currency: CURRENCY,
+      currency,
       durationDays,
       allowsFreeze,
       isActive,
@@ -116,7 +122,7 @@ export function PlanSheet({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Precio (MN)" htmlFor="plan-price" required>
+          <Field label={`Precio (${currencyLabel(currency)})`} htmlFor="plan-price" required>
             <Input
               id="plan-price"
               type="number"

@@ -62,7 +62,7 @@ import type {
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
-import { startOfDay } from '@/domain/membership/membership.logic';
+import { startOfDay, addDays } from '@/domain/membership/membership.logic';
 import { memberFromDoc } from '@/data/member/member.mapper';
 
 const d = (v: unknown): Date => (v instanceof Timestamp ? v.toDate() : new Date());
@@ -691,20 +691,68 @@ export class FirestoreReportsRepository implements ReportsRepository {
 export class FirestoreStatsRepository implements StatsRepository {
   constructor(private db: Firestore) {}
   async getDashboard(orgId: string): Promise<DashboardStats> {
-    // En prod los rollups los mantienen Cloud Functions (counters/*). Aquí se lee
-    // el documento agregado del día; si no existe aún, se devuelven ceros.
-    const key = dateKeyOf(new Date());
-    const s = await getDoc(doc(col(this.db, orgId, 'counters'), `daily-${key}`));
-    const x = s.data() ?? {};
+    // Modo sin Functions: se calcula en el cliente leyendo las colecciones (para
+    // un gimnasio es un volumen pequeño). Sin rollups en counters/*.
+    const now = new Date();
+    const startToday = startOfDay(now);
+    const todayKey = dateKeyOf(now);
+    const monthPrefix = todayKey.slice(0, 7);
+    const in7 = addDays(startToday, 7);
+    const weekFromKey = dateKeyOf(addDays(startToday, -6));
+    const startOfMonth = new Date(`${monthPrefix}-01T00:00:00`);
+
+    const [membersSnap, checkinsSnap, paymentsSnap, orgSnap] = await Promise.all([
+      getDocs(col(this.db, orgId, 'members')),
+      getDocs(query(col(this.db, orgId, 'checkins'), where('dateKey', '>=', weekFromKey))),
+      getDocs(
+        query(col(this.db, orgId, 'payments'), where('createdAt', '>=', Timestamp.fromDate(startOfMonth))),
+      ),
+      getDoc(doc(this.db, 'organizations', orgId)),
+    ]);
+
+    let activeMembers = 0;
+    let expiredMembers = 0;
+    let pendingRenewals = 0;
+    membersSnap.forEach((s) => {
+      const m = s.data();
+      if (m.status === 'active') activeMembers++;
+      else if (m.status === 'expired') expiredMembers++;
+      const end = m.membershipEndDate instanceof Timestamp ? m.membershipEndDate.toDate() : null;
+      if (m.status === 'active' && end) {
+        const e = startOfDay(end);
+        if (e >= startToday && e <= in7) pendingRenewals++;
+      }
+    });
+
+    let checkinsToday = 0;
+    const weeklyAttendance = [0, 0, 0, 0, 0, 0, 0];
+    checkinsSnap.forEach((s) => {
+      const c = s.data();
+      if (c.dateKey === todayKey) checkinsToday++;
+      const dt = new Date(`${c.dateKey}T00:00:00`);
+      const idx = (dt.getDay() + 6) % 7;
+      weeklyAttendance[idx] = (weeklyAttendance[idx] ?? 0) + 1;
+    });
+
+    let incomeTodayCents = 0;
+    let incomeMonthCents = 0;
+    paymentsSnap.forEach((s) => {
+      const p = s.data();
+      const created = p.createdAt instanceof Timestamp ? p.createdAt.toDate() : now;
+      const amount = p.amountCents ?? 0;
+      incomeMonthCents += amount;
+      if (dateKeyOf(created) === todayKey) incomeTodayCents += amount;
+    });
+
     return {
-      activeMembers: x.activeMembers ?? 0,
-      expiredMembers: x.expiredMembers ?? 0,
-      checkinsToday: x.checkinsToday ?? 0,
-      incomeTodayCents: x.incomeTodayCents ?? 0,
-      incomeMonthCents: x.incomeMonthCents ?? 0,
-      pendingRenewals: x.pendingRenewals ?? 0,
-      currency: x.currency ?? 'CUP',
-      weeklyAttendance: x.weeklyAttendance ?? [0, 0, 0, 0, 0, 0, 0],
+      activeMembers,
+      expiredMembers,
+      checkinsToday,
+      incomeTodayCents,
+      incomeMonthCents,
+      pendingRenewals,
+      currency: (orgSnap.data()?.currency as string) ?? 'CUP',
+      weeklyAttendance,
     };
   }
 }

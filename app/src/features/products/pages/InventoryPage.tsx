@@ -9,6 +9,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { Button } from '@/shared/ui/Button';
 import { cn } from '@/shared/lib/cn';
 import { isLowStock, type Product, type StockMovementType } from '@/domain/product/product.entity';
+import { useOrgSettings } from '@/features/settings/api/useSettings';
 import { useProducts, useInventoryMovements } from '../api/useProducts';
 import { AdjustStockSheet } from '../components/AdjustStockSheet';
 
@@ -21,17 +22,19 @@ const MOVE_LABEL: Record<StockMovementType, string> = {
 export default function InventoryPage() {
   const { data: products, isLoading } = useProducts();
   const { data: movements } = useInventoryMovements(60);
+  const { data: settings } = useOrgSettings();
   const [adjusting, setAdjusting] = useState<Product | null>(null);
 
+  const orgCurrency = settings?.currency ?? 'CUP';
   const stats = useMemo(() => {
     const list = products ?? [];
     const lowCount = list.filter((p) => isLowStock(p)).length;
-    const currency = list[0]?.currency ?? 'CUP';
+    const currency = orgCurrency;
     // Valor del inventario a costo (o precio si no hay costo).
     const valueCents = list.reduce((s, p) => s + (p.costCents ?? p.priceCents) * p.stock, 0);
     const units = list.reduce((s, p) => s + p.stock, 0);
     return { count: list.length, lowCount, valueCents, units, currency };
-  }, [products]);
+  }, [products, orgCurrency]);
 
   return (
     <div>
