@@ -84,9 +84,15 @@ export class FirestoreMemberRepository implements MemberRepository {
     const ref0 = doc(this.membersCol(orgId));
     let photoUrl: string | null = null;
     if (photo) {
-      const storageRef = ref(this.storage, `${orgId}/members/${ref0.id}/photo`);
-      await uploadBytes(storageRef, photo);
-      photoUrl = await getDownloadURL(storageRef);
+      // La foto es opcional: si Storage no está habilitado (p. ej. plan sin
+      // Storage) o la subida falla, se crea el cliente igual, sin foto.
+      try {
+        const storageRef = ref(this.storage, `${orgId}/members/${ref0.id}/photo`);
+        await uploadBytes(storageRef, photo);
+        photoUrl = await getDownloadURL(storageRef);
+      } catch {
+        photoUrl = null;
+      }
     }
     let accessCode = input.accessCode || generateAccessCode();
     if (input.accessCode) {

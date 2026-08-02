@@ -27,7 +27,9 @@ modos: la app decide según las variables `VITE_FIREBASE_*` (ver
    - **Firestore Database** → *Crear base de datos* → modo **producción** →
      elige región (p. ej. `nam5` o la más cercana). Las reglas ya vienen en el
      repo, no uses las de prueba.
-   - **Storage** → *Comenzar* (para fotos de clientes).
+   - **Storage** → *opcional*. Solo se usa para la foto del cliente. Si no lo
+     habilitas, la app funciona igual (los clientes se crean sin foto). El
+     despliegue no incluye Storage.
 
 Actualiza los alias de proyecto en **`.firebaserc`** con tu Project ID real, o
 usa alias de la CLI:
@@ -77,13 +79,15 @@ Verifica login, cobros, check-in y ventas contra los emuladores. Luego vuelve a
 ## 4. Desplegar reglas e índices
 
 ```bash
-firebase deploy --only firestore:rules,firestore:indexes,storage
+firebase deploy --only firestore:rules,firestore:indexes
 ```
 
 - `firestore.rules` — aislamiento multi-tenant y operaciones server-only.
 - `firestore.indexes.json` — índices compuestos (miembros, check-ins, pagos,
   membresías, rutinas).
-- `storage.rules` — acceso a fotos por organización.
+
+> Storage no se despliega (no está en `firebase.json`). Es opcional; solo se usa
+> para la foto del cliente y la app funciona sin él.
 
 ---
 
@@ -144,7 +148,7 @@ rewrite SPA (`** → /index.html`) y el cacheado de assets.
 ```bash
 npm run build --workspace @gymbar/shared
 npm run build
-firebase deploy      # rules + indexes + storage + functions + hosting
+firebase deploy      # rules + indexes + functions + hosting (sin storage)
 ```
 
 ---
