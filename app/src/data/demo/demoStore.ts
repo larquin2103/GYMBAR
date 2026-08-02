@@ -9,6 +9,7 @@ import type { Measurement } from '@/domain/measurement/measurement.entity';
 import type { OrganizationSettings } from '@/domain/organization/organization.entity';
 import type { StaffUser } from '@/domain/staff/staff.entity';
 import type { Routine } from '@/domain/routine/routine.entity';
+import type { Product, StockMovement, Sale } from '@/domain/product/product.entity';
 import { addDays, startOfDay } from '@/domain/membership/membership.logic';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
 
@@ -25,6 +26,9 @@ export interface DemoData {
   cashMovements: CashMovement[];
   measurements: Measurement[];
   routines: Routine[];
+  products: Product[];
+  stockMovements: StockMovement[];
+  sales: Sale[];
   settings: OrganizationSettings;
   staff: StaffUser[];
   receiptSeq: number;
@@ -283,6 +287,42 @@ function buildSeed(): DemoData {
     });
   }
 
+  // Catálogo de productos del punto de venta.
+  const products: Product[] = [
+    product('Agua mineral 500ml', 'BEB-001', 'Bebidas', 8000, 5000, 48, 12),
+    product('Bebida isotónica', 'BEB-002', 'Bebidas', 15000, 9000, 30, 8),
+    product('Proteína whey (dosis)', 'SUP-001', 'Suplementos', 35000, 22000, 20, 6),
+    product('Barra energética', 'SUP-002', 'Suplementos', 12000, 7000, 5, 10),
+    product('Camiseta GYMBAR', 'MER-001', 'Merchandising', 90000, 55000, 15, 5),
+    product('Toalla de gimnasio', 'MER-002', 'Merchandising', 45000, 28000, 3, 6),
+    product('Guantes de entrenamiento', 'ACC-001', 'Accesorios', 60000, 38000, 10, 4),
+  ];
+
+  function product(
+    name: string,
+    sku: string,
+    category: string,
+    priceCents: number,
+    costCents: number,
+    stock: number,
+    lowStockThreshold: number,
+  ): Product {
+    return {
+      id: uid(),
+      name,
+      sku,
+      category,
+      priceCents,
+      costCents,
+      currency: CURRENCY,
+      stock,
+      lowStockThreshold,
+      isActive: true,
+      createdAt: startOfDay(addDays(now, -40)),
+      updatedAt: now,
+    };
+  }
+
   // Asistencias repartidas en la semana (para el gráfico del dashboard).
   const activeMembers = members.filter((m) => m.status === 'active');
   for (let d = 0; d < 7; d++) {
@@ -312,6 +352,9 @@ function buildSeed(): DemoData {
     cashMovements: [],
     measurements,
     routines,
+    products,
+    stockMovements: [],
+    sales: [],
     settings: defaultSettings(),
     staff: seedStaff(now),
     receiptSeq: 2000,
@@ -341,6 +384,9 @@ function emptyData(): DemoData {
     cashMovements: [],
     measurements: [],
     routines: [],
+    products: [],
+    stockMovements: [],
+    sales: [],
     settings: defaultSettings(),
     staff: seedStaff(new Date()),
     receiptSeq: 1000,

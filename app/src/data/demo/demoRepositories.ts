@@ -28,6 +28,15 @@ import type {
   RoutineStatus,
   RoutineRepository,
 } from '@/domain/routine/routine.entity';
+import type {
+  Product,
+  ProductInput,
+  ProductRepository,
+  StockMovement,
+  Sale,
+  AdjustStockInput,
+  InventoryRepository,
+} from '@/domain/product/product.entity';
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import {
@@ -321,6 +330,59 @@ export class InMemoryRoutineRepository implements RoutineRepository {
   }
 }
 
+export class InMemoryProductRepository implements ProductRepository {
+  async list(orgId: string): Promise<Product[]> {
+    return getDemoData(orgId)
+      .products.slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  async getById(orgId: string, id: string): Promise<Product | null> {
+    return getDemoData(orgId).products.find((p) => p.id === id) ?? null;
+  }
+  async create(orgId: string, input: ProductInput): Promise<Product> {
+    const now = new Date();
+    const product: Product = { id: crypto.randomUUID(), ...input, createdAt: now, updatedAt: now };
+    getDemoData(orgId).products.push(product);
+    return product;
+  }
+  async update(orgId: string, id: string, input: Partial<ProductInput>): Promise<void> {
+    const products = getDemoData(orgId).products;
+    const idx = products.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error('Producto no encontrado');
+    products[idx] = { ...products[idx]!, ...input, updatedAt: new Date() };
+  }
+}
+
+export class InMemoryInventoryRepository implements InventoryRepository {
+  async listMovements(orgId: string, max = 100): Promise<StockMovement[]> {
+    return getDemoData(orgId).stockMovements.slice().sort(byNewest).slice(0, max);
+  }
+  async adjustStock(orgId: string, input: AdjustStockInput): Promise<void> {
+    const data = getDemoData(orgId);
+    const product = data.products.find((p) => p.id === input.productId);
+    if (!product) throw new Error('Producto no encontrado');
+    const nextStock = product.stock + input.delta;
+    if (nextStock < 0) throw new Error('El ajuste dejaría el stock en negativo');
+    product.stock = nextStock;
+    product.updatedAt = new Date();
+    data.stockMovements.push({
+      id: crypto.randomUUID(),
+      productId: product.id,
+      productNameSnapshot: product.name,
+      type: input.type,
+      quantityDelta: input.delta,
+      stockAfter: nextStock,
+      reason: input.reason,
+      saleId: null,
+      staffUid: input.staffUid,
+      createdAt: new Date(),
+    });
+  }
+  async listRecentSales(orgId: string, max = 50): Promise<Sale[]> {
+    return getDemoData(orgId).sales.slice().sort(byNewest).slice(0, max);
+  }
+}
+
 // Instancias singleton reutilizables por la factory.
 export const demoPlanRepo = new InMemoryPlanRepository();
 export const demoMembershipRepo = new InMemoryMembershipRepository();
@@ -333,3 +395,5 @@ export const demoOrganizationRepo = new InMemoryOrganizationRepository();
 export const demoStaffRepo = new InMemoryStaffRepository();
 export const demoReportsRepo = new InMemoryReportsRepository();
 export const demoRoutineRepo = new InMemoryRoutineRepository();
+export const demoProductRepo = new InMemoryProductRepository();
+export const demoInventoryRepo = new InMemoryInventoryRepository();

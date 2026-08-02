@@ -10,6 +10,7 @@ import type { OrganizationRepository } from '@/domain/organization/organization.
 import type { StaffRepository } from '@/domain/staff/staff.entity';
 import type { ReportsRepository } from '@/domain/reports/reports.entity';
 import type { RoutineRepository } from '@/domain/routine/routine.entity';
+import type { ProductRepository, InventoryRepository } from '@/domain/product/product.entity';
 import type { OperationsService } from '@/domain/operations/operations.service';
 import {
   demoPlanRepo,
@@ -23,6 +24,8 @@ import {
   demoStaffRepo,
   demoReportsRepo,
   demoRoutineRepo,
+  demoProductRepo,
+  demoInventoryRepo,
 } from './demo/demoRepositories';
 import { demoOperations } from './demo/demoOperations';
 import {
@@ -37,6 +40,8 @@ import {
   FirestoreStaffRepository,
   FirestoreReportsRepository,
   FirestoreRoutineRepository,
+  FirestoreProductRepository,
+  FirestoreInventoryRepository,
 } from './firestore/firestoreRepositories';
 import { FirebaseOperationsService } from './firestore/firebaseOperations';
 
@@ -58,6 +63,8 @@ interface OperationalData {
   staff: StaffRepository;
   reports: ReportsRepository;
   routines: RoutineRepository;
+  products: ProductRepository;
+  inventory: InventoryRepository;
   operations: OperationsService;
 }
 
@@ -79,6 +86,8 @@ export function getOperationalData(): OperationalData {
       staff: new FirestoreStaffRepository(db),
       reports: new FirestoreReportsRepository(db),
       routines: new FirestoreRoutineRepository(db),
+      products: new FirestoreProductRepository(db),
+      inventory: new FirestoreInventoryRepository(db),
       operations: new FirebaseOperationsService(getFunctionsInstance()),
     };
   } else {
@@ -94,6 +103,8 @@ export function getOperationalData(): OperationalData {
       staff: demoStaffRepo,
       reports: demoReportsRepo,
       routines: demoRoutineRepo,
+      products: demoProductRepo,
+      inventory: demoInventoryRepo,
       operations: demoOperations,
     };
   }

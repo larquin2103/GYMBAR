@@ -4,6 +4,7 @@ import type { Membership } from '@/domain/membership/membership.entity';
 import type { Payment } from '@/domain/payment/payment.entity';
 import type { CheckIn } from '@/domain/checkin/checkin.entity';
 import type { CashSession } from '@/domain/cashbox/cashbox.entity';
+import type { Sale } from '@/domain/product/product.entity';
 
 /**
  * Operaciones sensibles vía Cloud Functions callables (transaccionales e
@@ -60,6 +61,18 @@ export class FirebaseOperationsService implements OperationsService {
 
   async closeCashSession(input: { orgId: string; countedCents: number }): Promise<CashSession> {
     const res = await this.call<typeof input, CashSession>('closeCashSession')(input);
+    return res.data;
+  }
+
+  async registerSale(input: {
+    orgId: string;
+    items: { productId: string; quantity: number }[];
+    method: Sale['method'];
+    memberId?: string | null;
+    memberNameSnapshot?: string | null;
+    clientRequestId: string;
+  }): Promise<Sale> {
+    const res = await this.call<typeof input, Sale>('registerSale')(input);
     return res.data;
   }
 }

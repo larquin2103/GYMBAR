@@ -52,6 +52,26 @@ service cloud.firestore {
         allow read, write: if inOrg(oid) && isStaff();
       }
 
+      // Catálogo de productos. Lo mantiene recepción/admin; lo ve el staff.
+      match /products/{id} {
+        allow read:  if inOrg(oid) && isStaff();
+        allow write: if inOrg(oid) && isReception();
+      }
+
+      // Libro de inventario. Las entradas/ajustes las hace recepción (adjustStock,
+      // transaccional en cliente); las de venta las escribe registerSale (server).
+      match /stockMovements/{id} {
+        allow read:  if inOrg(oid) && isReception();
+        allow write: if inOrg(oid) && isReception();
+      }
+
+      // Ventas: solo lectura desde el cliente. Las crea registerSale (Cloud
+      // Function) porque tocan caja. Server-authoritative (docs/05).
+      match /sales/{id} {
+        allow read:  if inOrg(oid) && isReception();
+        allow write: if false;
+      }
+
       // Membresías: solo lectura desde el cliente. La vigencia la fija la Cloud
       // Function renewMembership (transaccional, junto al pago).
       match /memberships/{id} {

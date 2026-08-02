@@ -14,6 +14,7 @@ export { createOrganization } from './admin/onOrganizationCreated.js';
 export { renewMembership } from './operations/renewMembership.js';
 export { registerCheckIn } from './operations/checkin.js';
 export { openCashSession, addCashMovement, closeCashSession } from './operations/cashbox.js';
+export { registerSale } from './operations/sales.js';
 
 export const healthcheck = onRequest((_req, res) => {
   res.json({ ok: true, service: 'gymbar-functions', ts: Date.now() });

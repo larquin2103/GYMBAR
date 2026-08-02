@@ -3,6 +3,7 @@ import type { Membership } from '@/domain/membership/membership.entity';
 import type { Payment } from '@/domain/payment/payment.entity';
 import type { CheckIn } from '@/domain/checkin/checkin.entity';
 import type { CashSession } from '@/domain/cashbox/cashbox.entity';
+import type { Sale, SaleLine } from '@/domain/product/product.entity';
 import { computeRenewalPeriod, deriveMemberStatus } from '@/domain/membership/membership.logic';
 import { decideAccess, dateKeyOf } from '@/domain/checkin/checkin.logic';
 import { getDemoData, nextReceiptNumber } from './demoStore';
@@ -187,6 +188,89 @@ export class DemoOperationsService implements OperationsService {
       diffCents: input.countedCents - expected,
     };
     return session;
+  }
+
+  async registerSale(input: {
+    orgId: string;
+    items: { productId: string; quantity: number }[];
+    method: Sale['method'];
+    memberId?: string | null;
+    memberNameSnapshot?: string | null;
+    clientRequestId: string;
+  }): Promise<Sale> {
+    const data = getDemoData(input.orgId);
+    if (input.items.length === 0) throw new Error('La venta no tiene productos');
+
+    // Valida stock y arma las líneas con precios del catálogo (no del cliente).
+    const lines: SaleLine[] = [];
+    let currency = data.settings.currency;
+    for (const item of input.items) {
+      const product = data.products.find((p) => p.id === item.productId);
+      if (!product) throw new Error('Producto no encontrado');
+      const qty = Math.max(1, Math.round(item.quantity));
+      if (product.stock < qty) throw new Error(`Sin stock suficiente de ${product.name}`);
+      currency = product.currency;
+      lines.push({
+        productId: product.id,
+        nameSnapshot: product.name,
+        unitPriceCents: product.priceCents,
+        quantity: qty,
+        subtotalCents: product.priceCents * qty,
+      });
+    }
+    const totalCents = lines.reduce((s, l) => s + l.subtotalCents, 0);
+    const now = new Date();
+    const openSession = data.cashSessions.find((s) => s.status === 'open') ?? null;
+
+    const sale: Sale = {
+      id: uid(),
+      items: lines,
+      totalCents,
+      currency,
+      method: input.method,
+      memberId: input.memberId ?? null,
+      memberNameSnapshot: input.memberNameSnapshot ?? null,
+      cashSessionId: openSession?.id ?? null,
+      staffUid: 'demo-admin',
+      createdAt: now,
+    };
+    data.sales.push(sale);
+
+    // Descuenta inventario y deja asiento por cada producto.
+    for (const line of lines) {
+      const product = data.products.find((p) => p.id === line.productId)!;
+      product.stock -= line.quantity;
+      product.updatedAt = now;
+      data.stockMovements.push({
+        id: uid(),
+        productId: product.id,
+        productNameSnapshot: product.name,
+        type: 'sale',
+        quantityDelta: -line.quantity,
+        stockAfter: product.stock,
+        reason: `Venta ${sale.id.slice(0, 8)}`,
+        saleId: sale.id,
+        staffUid: 'demo-admin',
+        createdAt: now,
+      });
+    }
+
+    // Ingreso en caja si hay sesión abierta.
+    if (openSession) {
+      data.cashMovements.push({
+        id: uid(),
+        sessionId: openSession.id,
+        type: 'income',
+        amountCents: totalCents,
+        currency,
+        reason: `Venta de productos (${lines.length} art.)`,
+        paymentId: null,
+        staffUid: 'demo-admin',
+        createdAt: now,
+      });
+    }
+
+    return sale;
   }
 }
 

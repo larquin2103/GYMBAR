@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { Ruler, Boxes, ShoppingBag } from 'lucide-react';
+import { Ruler } from 'lucide-react';
 import { Shell } from './layout/Shell';
 import { CommandPaletteProvider } from './layout/CommandPalette';
 import { RequireAuth } from './auth/RequireAuth';
@@ -19,6 +19,8 @@ const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage')
 const AttendancePage = lazy(() => import('@/features/attendance/pages/AttendancePage'));
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
 const RoutinesPage = lazy(() => import('@/features/routines/pages/RoutinesPage'));
+const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'));
+const InventoryPage = lazy(() => import('@/features/products/pages/InventoryPage'));
 
 function RootLayout() {
   return (
@@ -57,28 +59,8 @@ export const router = createBrowserRouter([
               />
             ),
           },
-          {
-            path: 'inventory',
-            element: (
-              <PlaceholderPage
-                title="Inventario"
-                description="Control de stock de productos"
-                icon={Boxes}
-                phase="Fase 4"
-              />
-            ),
-          },
-          {
-            path: 'products',
-            element: (
-              <PlaceholderPage
-                title="Productos"
-                description="Catálogo y punto de venta"
-                icon={ShoppingBag}
-                phase="Fase 4"
-              />
-            ),
-          },
+          { path: 'inventory', element: <InventoryPage /> },
+          { path: 'products', element: <ProductsPage /> },
           { path: 'reports', element: <ReportsPage /> },
           { path: 'settings/users', element: <UsersPage /> },
           { path: 'settings', element: <SettingsPage /> },

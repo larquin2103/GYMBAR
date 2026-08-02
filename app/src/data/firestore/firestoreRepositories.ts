@@ -10,6 +10,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  runTransaction,
   Timestamp,
   type Firestore,
   type DocumentData,
@@ -43,6 +44,15 @@ import type {
   RoutineStatus,
   RoutineRepository,
 } from '@/domain/routine/routine.entity';
+import type {
+  Product,
+  ProductInput,
+  ProductRepository,
+  StockMovement,
+  Sale,
+  AdjustStockInput,
+  InventoryRepository,
+} from '@/domain/product/product.entity';
 import type { Role } from '@gymbar/shared';
 import type { DashboardStats, StatsRepository } from '@/domain/stats/stats';
 import { dateKeyOf } from '@/domain/checkin/checkin.logic';
@@ -452,6 +462,118 @@ export class FirestoreRoutineRepository implements RoutineRepository {
     await updateDoc(doc(col(this.db, orgId, 'routines'), id), {
       status,
       updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
+}
+
+function toProduct(id: string, x: DocumentData): Product {
+  return {
+    id,
+    name: x.name ?? '',
+    sku: x.sku ?? '',
+    category: x.category ?? '',
+    priceCents: x.priceCents ?? 0,
+    costCents: x.costCents ?? null,
+    currency: x.currency ?? 'CUP',
+    stock: x.stock ?? 0,
+    lowStockThreshold: x.lowStockThreshold ?? 0,
+    isActive: x.isActive ?? true,
+    createdAt: d(x.createdAt),
+    updatedAt: d(x.updatedAt),
+  };
+}
+
+export class FirestoreProductRepository implements ProductRepository {
+  constructor(private db: Firestore) {}
+  async list(orgId: string): Promise<Product[]> {
+    const snap = await getDocs(query(col(this.db, orgId, 'products'), orderBy('name', 'asc')));
+    return snap.docs.map((s) => toProduct(s.id, s.data()));
+  }
+  async getById(orgId: string, id: string): Promise<Product | null> {
+    const s = await getDoc(doc(col(this.db, orgId, 'products'), id));
+    return s.exists() ? toProduct(s.id, s.data()) : null;
+  }
+  async create(orgId: string, input: ProductInput): Promise<Product> {
+    const ref = doc(col(this.db, orgId, 'products'));
+    const now = new Date();
+    await setDoc(ref, {
+      ...input,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+    });
+    return { id: ref.id, ...input, createdAt: now, updatedAt: now };
+  }
+  async update(orgId: string, id: string, input: Partial<ProductInput>): Promise<void> {
+    await updateDoc(doc(col(this.db, orgId, 'products'), id), {
+      ...input,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
+}
+
+export class FirestoreInventoryRepository implements InventoryRepository {
+  constructor(private db: Firestore) {}
+  async listMovements(orgId: string, max = 100): Promise<StockMovement[]> {
+    const snap = await getDocs(
+      query(col(this.db, orgId, 'stockMovements'), orderBy('createdAt', 'desc'), fbLimit(max)),
+    );
+    return snap.docs.map((s) => {
+      const x = s.data();
+      return {
+        id: s.id,
+        productId: x.productId,
+        productNameSnapshot: x.productNameSnapshot ?? '',
+        type: x.type,
+        quantityDelta: x.quantityDelta ?? 0,
+        stockAfter: x.stockAfter ?? 0,
+        reason: x.reason ?? '',
+        saleId: x.saleId ?? null,
+        staffUid: x.staffUid ?? '',
+        createdAt: d(x.createdAt),
+      };
+    });
+  }
+  async adjustStock(orgId: string, input: AdjustStockInput): Promise<void> {
+    const productRef = doc(col(this.db, orgId, 'products'), input.productId);
+    const moveRef = doc(col(this.db, orgId, 'stockMovements'));
+    await runTransaction(this.db, async (tx) => {
+      const snap = await tx.get(productRef);
+      if (!snap.exists()) throw new Error('Producto no encontrado');
+      const product = toProduct(snap.id, snap.data());
+      const nextStock = product.stock + input.delta;
+      if (nextStock < 0) throw new Error('El ajuste dejaría el stock en negativo');
+      tx.update(productRef, { stock: nextStock, updatedAt: Timestamp.fromDate(new Date()) });
+      tx.set(moveRef, {
+        productId: product.id,
+        productNameSnapshot: product.name,
+        type: input.type,
+        quantityDelta: input.delta,
+        stockAfter: nextStock,
+        reason: input.reason,
+        saleId: null,
+        staffUid: input.staffUid,
+        createdAt: Timestamp.fromDate(new Date()),
+      });
+    });
+  }
+  async listRecentSales(orgId: string, max = 50): Promise<Sale[]> {
+    const snap = await getDocs(
+      query(col(this.db, orgId, 'sales'), orderBy('createdAt', 'desc'), fbLimit(max)),
+    );
+    return snap.docs.map((s) => {
+      const x = s.data();
+      return {
+        id: s.id,
+        items: Array.isArray(x.items) ? x.items : [],
+        totalCents: x.totalCents ?? 0,
+        currency: x.currency ?? 'CUP',
+        method: x.method,
+        memberId: x.memberId ?? null,
+        memberNameSnapshot: x.memberNameSnapshot ?? null,
+        cashSessionId: x.cashSessionId ?? null,
+        staffUid: x.staffUid ?? '',
+        createdAt: d(x.createdAt),
+      };
     });
   }
 }
