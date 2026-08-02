@@ -3,13 +3,6 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
-    }
-  ],
   "hosting": {
     "public": "app/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
@@ -28,7 +21,6 @@
   "emulators": {
     "auth": { "port": 9099 },
     "firestore": { "port": 8080 },
-    "functions": { "port": 5001 },
     "ui": { "enabled": true },
     "singleProjectMode": true
   }

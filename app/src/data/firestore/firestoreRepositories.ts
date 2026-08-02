@@ -9,13 +9,13 @@ import {
   where,
   setDoc,
   updateDoc,
+  deleteDoc,
   runTransaction,
   Timestamp,
   type Firestore,
   type DocumentData,
   type QueryConstraint,
 } from 'firebase/firestore';
-import { httpsCallable, type Functions } from 'firebase/functions';
 import type { Plan, PlanInput, PlanRepository } from '@/domain/plan/plan.entity';
 import type { Membership, MembershipRepository } from '@/domain/membership/membership.entity';
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
@@ -374,10 +374,7 @@ export class FirestoreOrganizationRepository implements OrganizationRepository {
 }
 
 export class FirestoreStaffRepository implements StaffRepository {
-  constructor(
-    private db: Firestore,
-    private fns: Functions,
-  ) {}
+  constructor(private db: Firestore) {}
   private col(orgId: string) {
     return collection(this.db, 'organizations', orgId, 'staff');
   }
@@ -395,44 +392,24 @@ export class FirestoreStaffRepository implements StaffRepository {
     });
   }
   async add(orgId: string, input: StaffInput): Promise<AddStaffResult> {
-    // Alta de punta a punta vía Cloud Function: crea la cuenta de acceso, asigna
-    // claims (orgId + rol) y registra el directorio. Devuelve el enlace para que
-    // el usuario fije su contraseña (server-authoritative, ver docs/05).
-    const res = await httpsCallable<
-      { orgId: string; email: string; displayName: string; role: Role },
-      {
-        uid: string;
-        email: string;
-        displayName: string;
-        role: Role;
-        createdAt: string;
-        resetLink: string | null;
-      }
-    >(
-      this.fns,
-      'inviteStaff',
-    )({ orgId, email: input.email, displayName: input.displayName, role: input.role });
-    const x = res.data;
-    return {
-      id: x.uid,
-      displayName: x.displayName,
-      email: x.email,
-      role: x.role,
-      createdAt: new Date(x.createdAt),
-      inviteLink: x.resetLink ?? null,
-    };
+    // Modo sin Functions: registra el directorio del personal. El acceso real
+    // (cuenta + custom claims) se otorga con el script local scripts/set-staff-role.mjs
+    // (ver docs/13). No se puede asignar claims desde el navegador.
+    const ref = doc(this.col(orgId));
+    const now = new Date();
+    await setDoc(ref, {
+      displayName: input.displayName,
+      email: input.email.toLowerCase(),
+      role: input.role,
+      createdAt: Timestamp.fromDate(now),
+    });
+    return { id: ref.id, ...input, createdAt: now, inviteLink: null };
   }
   async updateRole(orgId: string, id: string, role: Role): Promise<void> {
-    await httpsCallable<{ orgId: string; targetUid: string; role: Role }, { ok: boolean }>(
-      this.fns,
-      'setUserRole',
-    )({ orgId, targetUid: id, role });
+    await updateDoc(doc(this.col(orgId), id), { role });
   }
   async remove(orgId: string, id: string): Promise<void> {
-    await httpsCallable<{ orgId: string; targetUid: string }, { ok: boolean }>(
-      this.fns,
-      'removeStaff',
-    )({ orgId, targetUid: id });
+    await deleteDoc(doc(this.col(orgId), id));
   }
 }
 

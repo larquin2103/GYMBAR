@@ -22,6 +22,7 @@ const ROLE_HINTS: Record<Role, string> = {
 interface Done {
   displayName: string;
   email: string;
+  role: Role;
   inviteLink: string | null;
 }
 
@@ -58,7 +59,12 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
         email: email.trim(),
         role,
       });
-      setDone({ displayName: result.displayName, email: result.email, inviteLink: result.inviteLink ?? null });
+      setDone({
+        displayName: result.displayName,
+        email: result.email,
+        role: result.role,
+        inviteLink: result.inviteLink ?? null,
+      });
     } catch (err) {
       return setError(err instanceof Error ? err.message : 'No se pudo agregar.');
     }
@@ -97,7 +103,7 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
         <div className="space-y-4">
           <div className="flex items-center gap-2 rounded-md bg-state-active/10 px-3 py-2.5 text-sm text-state-active">
             <Check className="h-4 w-4 shrink-0" />
-            La cuenta quedó creada con su rol asignado.
+            Registrado en el directorio del personal.
           </div>
 
           {done.inviteLink ? (
@@ -118,10 +124,13 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
               </div>
             </div>
           ) : (
-            <p className="text-sm text-content-muted">
-              En modo demostración no se generan cuentas reales. Con Firebase conectado, aquí
-              aparece el enlace para que el usuario defina su contraseña.
-            </p>
+            <div className="rounded-md border border-border p-3 text-sm text-content-muted">
+              Para darle acceso real (cuenta y contraseña), ejecuta en tu PC:
+              <pre className="mt-2 overflow-x-auto rounded bg-surface px-2 py-1.5 text-xs text-content">
+                node scripts/set-staff-role.mjs &lt;orgId&gt; {done.email} &lt;password&gt; {done.role}
+              </pre>
+              <span className="mt-1 block text-xs">Detalles en docs/13.</span>
+            </div>
           )}
         </div>
       </Sheet>
@@ -191,8 +200,9 @@ export function StaffSheet({ open, onClose }: { open: boolean; onClose: () => vo
         )}
 
         <p className="text-xs text-content-muted">
-          Con Firebase conectado, al agregar se crea la cuenta de acceso, se le asigna el rol
-          (custom claims) y se genera un enlace para que defina su contraseña. Ver docs/05.
+          Esto registra a la persona en el directorio. Para darle acceso real (cuenta y
+          contraseña) ejecuta el script <span className="tabular">set-staff-role.mjs</span> con su
+          correo y rol. Ver docs/13.
         </p>
       </div>
     </Sheet>

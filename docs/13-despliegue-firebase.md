@@ -11,8 +11,9 @@ modos: la app decide según las variables `VITE_FIREBASE_*` (ver
 
 - **Node 22** (las Functions declaran `engines.node: "22"`).
 - **Firebase CLI**: `npm install -g firebase-tools` y `firebase login`.
-- Una **tarjeta** asociada: desplegar Cloud Functions (Gen 2) requiere el plan
-  **Blaze** (pago por uso; tiene capa gratuita generosa).
+- **Plan gratuito (Spark) es suficiente** en esta configuración: no se despliegan
+  Cloud Functions ni Storage. (Si en el futuro quieres el modo server-authoritative
+  con Functions, ahí sí haría falta el plan Blaze — pago por uso con capa gratuita.)
 
 ---
 
@@ -91,26 +92,26 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 ---
 
-## 5. Desplegar las Cloud Functions
+## 5. Operaciones sin Cloud Functions (modo plan gratuito)
 
-Las Functions dependen del paquete `@gymbar/shared`; el `predeploy` compila
-`functions` automáticamente, pero conviene construir `shared` antes:
+> **Este proyecto está configurado para el plan gratuito (Spark).** Las Cloud
+> Functions (Gen 2) requieren el plan Blaze, así que **no se despliegan**. En su
+> lugar, las operaciones sensibles (cobros, caja, check-in, ventas) se ejecutan
+> en el cliente con **transacciones de Firestore**, y las Reglas de Seguridad
+> controlan quién puede escribir. `firebase.json` ya no incluye `functions`.
 
-```bash
-npm run build --workspace @gymbar/shared
-firebase deploy --only functions
-```
+Compromiso consciente: sin servidor, la integridad se apoya en las reglas y en
+la confianza del personal (un solo gimnasio). Si más adelante activas Blaze,
+el código de `functions/` sigue en el repo para volver al modo server-authoritative.
 
-Funciones desplegadas: `createOrganization`, `inviteStaff`, `setUserRole`,
-`removeStaff`, `renewMembership`, `registerCheckIn`, `openCashSession`,
-`addCashMovement`, `closeCashSession`, `registerSale`, `healthcheck`.
+**No hay nada que desplegar en este paso.** Continúa con el bootstrap.
 
 ---
 
 ## 6. Crear el primer administrador (bootstrap)
 
-Un admin no se puede crear desde la app sin otro admin previo. Usa el script del
-repo, que crea el usuario, la organización y le asigna los claims de admin:
+Asignar roles (custom claims) necesita el Admin SDK, que **sí funciona en el plan
+gratuito** ejecutándolo tú localmente. Usa el script del repo:
 
 1. Consola → **Configuración del proyecto → Cuentas de servicio → Generar nueva
    clave privada**. Guarda el JSON (p. ej. `sa.json`, **no lo subas a git**).
@@ -121,15 +122,21 @@ export GOOGLE_APPLICATION_CREDENTIALS=./sa.json
 node scripts/bootstrap-org.mjs "admin@tugimnasio.com" "UnaClaveFuerte123" "Mi Gimnasio"
 ```
 
-Salida esperada: *"Organización … creada"* y el usuario ya es admin. A partir de
-ahí, inicia sesión en la app con ese correo y contraseña.
+Salida esperada: *"Organización … creada: <orgId>"* y el usuario ya es admin.
+**Anota el `<orgId>`** (lo necesitas para dar de alta más personal). Inicia
+sesión en la app con ese correo y contraseña.
 
-> Alta de más usuarios (recepción/entrenadores): ya integrada de punta a punta.
-> Desde la app, en **Sistema → Usuarios → Agregar**, el admin crea la cuenta
-> (Cloud Function `inviteStaff`): se crea el acceso, se asignan los claims
-> (orgId + rol) y se muestra un **enlace para que el usuario defina su
-> contraseña**. Cambiar rol usa `setUserRole` y quitar personal usa
-> `removeStaff` (revoca los claims). No requiere pasos manuales en la consola.
+> **Alta de más usuarios (recepción/entrenadores):** desde la app, en
+> **Sistema → Usuarios → Agregar**, el admin lo registra en el directorio. Para
+> darle **acceso real** (cuenta + contraseña + rol), ejecuta el script local:
+>
+> ```bash
+> export GOOGLE_APPLICATION_CREDENTIALS=./sa.json
+> node scripts/set-staff-role.mjs <orgId> "recepcion@tugimnasio.com" "ClaveTemporal123" reception "Nombre"
+> ```
+>
+> `role ∈ admin | reception | trainer`. La persona luego inicia sesión con ese
+> correo y contraseña. (Con Blaze, esto se haría desde la app sin script.)
 
 ---
 
@@ -143,12 +150,11 @@ firebase deploy --only hosting
 La app queda en `https://TU_PROJECT_ID.web.app`. `firebase.json` ya trae el
 rewrite SPA (`** → /index.html`) y el cacheado de assets.
 
-### Todo junto
+### Todo junto (modo gratuito)
 
 ```bash
-npm run build --workspace @gymbar/shared
-npm run build
-firebase deploy      # rules + indexes + functions + hosting (sin storage)
+npm run build        # compila shared + app
+firebase deploy      # firestore rules + indexes + hosting (sin functions ni storage)
 ```
 
 ---

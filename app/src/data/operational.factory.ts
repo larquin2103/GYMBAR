@@ -1,4 +1,4 @@
-import { isFirebaseConfigured, getDb, getFunctionsInstance } from '@/shared/lib/firebase';
+import { isFirebaseConfigured, getDb } from '@/shared/lib/firebase';
 import type { PlanRepository } from '@/domain/plan/plan.entity';
 import type { MembershipRepository } from '@/domain/membership/membership.entity';
 import type { PaymentRepository } from '@/domain/payment/payment.entity';
@@ -43,13 +43,14 @@ import {
   FirestoreProductRepository,
   FirestoreInventoryRepository,
 } from './firestore/firestoreRepositories';
-import { FirebaseOperationsService } from './firestore/firebaseOperations';
+import { FirestoreOperationsService } from './firestore/firestoreOperations';
 
 /**
- * Selector único para los servicios/repos operativos. En producción usa
- * Firestore (lectura) + Cloud Functions callables (operaciones sensibles); en
- * dev/demo usa las implementaciones en memoria coherentes. La UI depende solo
- * de las interfaces de dominio.
+ * Selector único para los servicios/repos operativos. Con Firebase configurado
+ * usa Firestore para lectura y las operaciones sensibles (cobros, caja, check-in,
+ * ventas) se ejecutan en el cliente con transacciones (modo sin Cloud Functions,
+ * ver docs/13). Sin credenciales (dev/demo) usa las implementaciones en memoria.
+ * La UI depende solo de las interfaces de dominio.
  */
 interface OperationalData {
   plans: PlanRepository;
@@ -83,12 +84,12 @@ export function getOperationalData(): OperationalData {
       stats: new FirestoreStatsRepository(db),
       measurements: new FirestoreMeasurementRepository(db),
       organization: new FirestoreOrganizationRepository(db),
-      staff: new FirestoreStaffRepository(db, getFunctionsInstance()),
+      staff: new FirestoreStaffRepository(db),
       reports: new FirestoreReportsRepository(db),
       routines: new FirestoreRoutineRepository(db),
       products: new FirestoreProductRepository(db),
       inventory: new FirestoreInventoryRepository(db),
-      operations: new FirebaseOperationsService(getFunctionsInstance()),
+      operations: new FirestoreOperationsService(db),
     };
   } else {
     cached = {
