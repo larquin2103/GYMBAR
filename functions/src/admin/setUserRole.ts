@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 interface SetUserRoleData {
@@ -36,6 +37,16 @@ export const setUserRole = onCall(async (request) => {
     orgId: data.orgId,
     role: data.role,
   });
+
+  // Mantiene el directorio y el índice de usuarios en sincronía con el claim.
+  const db = getFirestore();
+  await db
+    .collection('organizations')
+    .doc(data.orgId)
+    .collection('staff')
+    .doc(data.targetUid)
+    .set({ role: data.role }, { merge: true });
+  await db.collection('users').doc(data.targetUid).set({ role: data.role }, { merge: true });
 
   return { ok: true };
 });

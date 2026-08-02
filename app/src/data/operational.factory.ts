@@ -83,7 +83,7 @@ export function getOperationalData(): OperationalData {
       stats: new FirestoreStatsRepository(db),
       measurements: new FirestoreMeasurementRepository(db),
       organization: new FirestoreOrganizationRepository(db),
-      staff: new FirestoreStaffRepository(db),
+      staff: new FirestoreStaffRepository(db, getFunctionsInstance()),
       reports: new FirestoreReportsRepository(db),
       routines: new FirestoreRoutineRepository(db),
       products: new FirestoreProductRepository(db),

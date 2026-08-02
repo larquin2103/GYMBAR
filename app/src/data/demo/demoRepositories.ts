@@ -14,7 +14,12 @@ import type {
   OrganizationSettingsInput,
   OrganizationRepository,
 } from '@/domain/organization/organization.entity';
-import type { StaffUser, StaffInput, StaffRepository } from '@/domain/staff/staff.entity';
+import type {
+  StaffUser,
+  StaffInput,
+  StaffRepository,
+  AddStaffResult,
+} from '@/domain/staff/staff.entity';
 import type {
   ExpiringRow,
   RosterRow,
@@ -215,14 +220,15 @@ export class InMemoryStaffRepository implements StaffRepository {
   async list(orgId: string): Promise<StaffUser[]> {
     return getDemoData(orgId).staff.slice();
   }
-  async add(orgId: string, input: StaffInput): Promise<StaffUser> {
+  async add(orgId: string, input: StaffInput): Promise<AddStaffResult> {
     const staff = getDemoData(orgId).staff;
     if (staff.some((s) => s.email.toLowerCase() === input.email.toLowerCase())) {
       throw new Error('Ya existe un usuario con ese correo');
     }
     const user: StaffUser = { id: crypto.randomUUID(), ...input, createdAt: new Date() };
     staff.push(user);
-    return user;
+    // En demo no hay Auth real: no se genera enlace de invitación.
+    return { ...user, inviteLink: null };
   }
   async updateRole(orgId: string, id: string, role: Role): Promise<void> {
     const user = getDemoData(orgId).staff.find((s) => s.id === id);

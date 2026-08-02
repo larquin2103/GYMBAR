@@ -35,11 +35,12 @@ service cloud.firestore {
         allow write: if inOrg(oid) && isAdmin();
       }
 
-      // Directorio de personal. El rol efectivo (claims) lo asigna setUserRole
-      // (Cloud Function); aquí el admin mantiene el directorio.
+      // Directorio de personal: solo lectura desde el cliente. El alta, cambio de
+      // rol y baja los hacen Cloud Functions (inviteStaff/setUserRole/removeStaff)
+      // junto con los custom claims. Server-authoritative (docs/05).
       match /staff/{id} {
         allow read:  if inOrg(oid) && isStaff();
-        allow write: if inOrg(oid) && isAdmin();
+        allow write: if false;
       }
 
       // Medidas del cliente (subcolección). Staff del tenant.

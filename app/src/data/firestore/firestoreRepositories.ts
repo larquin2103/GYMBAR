@@ -9,13 +9,13 @@ import {
   where,
   setDoc,
   updateDoc,
-  deleteDoc,
   runTransaction,
   Timestamp,
   type Firestore,
   type DocumentData,
   type QueryConstraint,
 } from 'firebase/firestore';
+import { httpsCallable, type Functions } from 'firebase/functions';
 import type { Plan, PlanInput, PlanRepository } from '@/domain/plan/plan.entity';
 import type { Membership, MembershipRepository } from '@/domain/membership/membership.entity';
 import type { Payment, PaymentRepository } from '@/domain/payment/payment.entity';
@@ -32,7 +32,12 @@ import type {
   OrganizationSettingsInput,
   OrganizationRepository,
 } from '@/domain/organization/organization.entity';
-import type { StaffUser, StaffInput, StaffRepository } from '@/domain/staff/staff.entity';
+import type {
+  StaffUser,
+  StaffInput,
+  StaffRepository,
+  AddStaffResult,
+} from '@/domain/staff/staff.entity';
 import type {
   ExpiringRow,
   RosterRow,
@@ -369,7 +374,10 @@ export class FirestoreOrganizationRepository implements OrganizationRepository {
 }
 
 export class FirestoreStaffRepository implements StaffRepository {
-  constructor(private db: Firestore) {}
+  constructor(
+    private db: Firestore,
+    private fns: Functions,
+  ) {}
   private col(orgId: string) {
     return collection(this.db, 'organizations', orgId, 'staff');
   }
@@ -386,19 +394,45 @@ export class FirestoreStaffRepository implements StaffRepository {
       };
     });
   }
-  async add(orgId: string, input: StaffInput): Promise<StaffUser> {
-    // En prod, la invitación + asignación de claims la hace una Cloud Function
-    // (setUserRole). Aquí se registra el directorio de personal.
-    const ref = doc(this.col(orgId));
-    const now = new Date();
-    await setDoc(ref, { ...input, createdAt: Timestamp.fromDate(now) });
-    return { id: ref.id, ...input, createdAt: now };
+  async add(orgId: string, input: StaffInput): Promise<AddStaffResult> {
+    // Alta de punta a punta vía Cloud Function: crea la cuenta de acceso, asigna
+    // claims (orgId + rol) y registra el directorio. Devuelve el enlace para que
+    // el usuario fije su contraseña (server-authoritative, ver docs/05).
+    const res = await httpsCallable<
+      { orgId: string; email: string; displayName: string; role: Role },
+      {
+        uid: string;
+        email: string;
+        displayName: string;
+        role: Role;
+        createdAt: string;
+        resetLink: string | null;
+      }
+    >(
+      this.fns,
+      'inviteStaff',
+    )({ orgId, email: input.email, displayName: input.displayName, role: input.role });
+    const x = res.data;
+    return {
+      id: x.uid,
+      displayName: x.displayName,
+      email: x.email,
+      role: x.role,
+      createdAt: new Date(x.createdAt),
+      inviteLink: x.resetLink ?? null,
+    };
   }
   async updateRole(orgId: string, id: string, role: Role): Promise<void> {
-    await updateDoc(doc(this.col(orgId), id), { role });
+    await httpsCallable<{ orgId: string; targetUid: string; role: Role }, { ok: boolean }>(
+      this.fns,
+      'setUserRole',
+    )({ orgId, targetUid: id, role });
   }
   async remove(orgId: string, id: string): Promise<void> {
-    await deleteDoc(doc(this.col(orgId), id));
+    await httpsCallable<{ orgId: string; targetUid: string }, { ok: boolean }>(
+      this.fns,
+      'removeStaff',
+    )({ orgId, targetUid: id });
   }
 }
 

@@ -10,6 +10,8 @@ import { onRequest } from 'firebase-functions/v2/https';
 initializeApp();
 
 export { setUserRole } from './admin/setUserRole.js';
+export { inviteStaff } from './admin/inviteStaff.js';
+export { removeStaff } from './admin/removeStaff.js';
 export { createOrganization } from './admin/onOrganizationCreated.js';
 export { renewMembership } from './operations/renewMembership.js';
 export { registerCheckIn } from './operations/checkin.js';
