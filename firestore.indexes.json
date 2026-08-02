@@ -39,6 +39,14 @@
         { "fieldPath": "memberId", "order": "ASCENDING" },
         { "fieldPath": "endDate", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "routines",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
