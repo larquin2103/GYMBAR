@@ -1,6 +1,6 @@
 import { Menu, Search } from 'lucide-react';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
-import { ConnectivityIndicator } from './ConnectivityIndicator';
+import { SyncIndicator } from './SyncIndicator';
 import { useCommandPalette } from './CommandPalette';
 import { UserMenu } from './UserMenu';
 
@@ -31,7 +31,7 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
       </button>
 
       <div className="ml-auto flex items-center gap-2">
-        <ConnectivityIndicator />
+        <SyncIndicator />
         <ThemeToggle />
         <UserMenu />
       </div>

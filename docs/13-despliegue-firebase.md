@@ -161,8 +161,13 @@ firebase deploy      # firestore rules + indexes + hosting (sin functions ni sto
 
 ## 9. Notas de producción
 
-- **PWA / offline**: Firestore usa caché persistente (IndexedDB, multipestaña);
-  el check-in funciona offline y sincroniza al reconectar.
+- **PWA / offline**: Firestore usa caché persistente (IndexedDB, multipestaña) y
+  detección de long-polling (para redes con proxy/VPN que bloquean el streaming);
+  la app funciona offline y sincroniza al reconectar.
+- **Ícono de nube (sincronización)**: en la barra superior. El verde
+  “Sincronizado” solo aparece si hubo una ida y vuelta real con el servidor (no
+  solo porque el SO diga “en línea”). Incluye “Sincronizar ahora” para forzar la
+  reconexión y refrescar los datos.
 - **Multi-tenant**: cada gimnasio es una cuenta de Firebase aislada bajo
   `organizations/{uid}`; el acceso se decide por `auth.uid == orgId`.
 - **Multi-dispositivo**: en otro equipo, inicia sesión con el mismo correo y

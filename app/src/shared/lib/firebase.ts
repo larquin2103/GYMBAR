@@ -52,6 +52,10 @@ export function getDb(): Firestore {
   // check-in offline-first (ver docs/10).
   firestore = initializeFirestore(getFirebaseApp(), {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    // Redes con proxy/VPN (o antivirus) suelen bloquear el streaming (WebChannel)
+    // de Firestore y la sincronización se queda colgada. Esto detecta ese caso y
+    // cae a long-polling (peticiones normales), más fiable en esas redes.
+    experimentalAutoDetectLongPolling: true,
   });
   if (useEmulators) connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
   return firestore;
