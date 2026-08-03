@@ -50,7 +50,7 @@ export function Shell() {
             mobileOpen ? 'translate-x-0' : '-translate-x-full',
           )}
         >
-          <div className="relative h-full">
+          <div className="relative h-full bg-surface shadow-overlay">
             <Sidebar onNavigate={() => setMobileOpen(false)} />
             <button
               type="button"

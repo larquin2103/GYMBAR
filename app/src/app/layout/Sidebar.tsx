@@ -18,7 +18,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const items = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-surface/40">
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-surface">
       <div className="flex h-16 items-center gap-2.5 px-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-contrast">
           <Dumbbell className="h-5 w-5" />

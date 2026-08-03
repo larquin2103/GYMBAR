@@ -66,7 +66,7 @@ export function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-12 z-50 w-60 overflow-hidden rounded-lg border border-border bg-bg shadow-lg"
+          className="absolute right-0 top-12 z-[60] w-60 overflow-hidden rounded-lg border border-border bg-bg shadow-lg max-sm:fixed max-sm:inset-x-2 max-sm:top-16 max-sm:w-auto"
         >
           <div className="border-b border-border px-4 py-3">
             <div className="truncate text-sm font-semibold text-content">{displayName}</div>

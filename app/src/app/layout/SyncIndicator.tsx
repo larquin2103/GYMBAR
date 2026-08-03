@@ -121,7 +121,7 @@ export function SyncIndicator() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-10 z-50 w-72 overflow-hidden rounded-lg border border-border bg-bg shadow-lg"
+          className="absolute right-0 top-10 z-[60] w-72 overflow-hidden rounded-lg border border-border bg-bg shadow-lg max-sm:fixed max-sm:inset-x-2 max-sm:top-16 max-sm:w-auto"
         >
           <div className="border-b border-border px-4 py-3">
             <div className={cn('flex items-center gap-2 text-sm font-semibold', meta.tone)}>
