@@ -6,6 +6,11 @@ export interface OrganizationSettings {
   phone: string | null;
   address: string | null;
   /**
+   * Logo del gimnasio como data URI comprimido (se guarda en Firestore, no en
+   * Storage). Null = sin logo (se muestra el ícono por defecto). Ver docs/13.
+   */
+  logoUrl: string | null;
+  /**
    * En el check-in de autoservicio, bloquear el acceso a clientes no activos
    * (mostrar "Pasa por recepción"). Si es false, se permite con aviso.
    */
@@ -17,6 +22,7 @@ export interface OrganizationSettingsInput {
   currency?: string;
   phone?: string | null;
   address?: string | null;
+  logoUrl?: string | null;
   kioskBlockExpired?: boolean;
 }
 

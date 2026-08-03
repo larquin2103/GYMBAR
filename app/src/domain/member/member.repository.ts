@@ -24,6 +24,11 @@ export interface MemberRepository {
   /** Busca por PIN de acceso (check-in de autoservicio). */
   getByAccessCode(orgId: string, accessCode: string): Promise<Member | null>;
   search(orgId: string, query: MemberQuery): Promise<Page<Member>>;
+  /**
+   * Clientes asignados a un entrenador (para el módulo de Medidas). Si trainerId
+   * es null, devuelve todos (vista de admin/recepción). Orden por nombre.
+   */
+  listForTrainer(orgId: string, trainerId: string | null): Promise<Member[]>;
   create(orgId: string, input: NewMember, photo?: Blob | null): Promise<Member>;
   update(orgId: string, id: string, patch: MemberPatch): Promise<void>;
 }

@@ -45,6 +45,7 @@ function defaultSettings(): OrganizationSettings {
     currency: CURRENCY,
     phone: null,
     address: null,
+    logoUrl: null,
     kioskBlockExpired: true,
   };
 }
@@ -53,7 +54,7 @@ function seedStaff(now: Date): DemoStaff[] {
   return [
     { id: 'demo-admin', displayName: 'Administrador demo', email: 'demo@gymbar.app', role: 'admin', active: true, pin: '1234', createdAt: now },
     { id: crypto.randomUUID(), displayName: 'Recepción', email: 'recepcion@gymbar.app', role: 'reception', active: true, pin: '2345', createdAt: now },
-    { id: crypto.randomUUID(), displayName: 'Entrenador', email: 'coach@gymbar.app', role: 'trainer', active: true, pin: '3456', createdAt: now },
+    { id: 'demo-trainer', displayName: 'Entrenador', email: 'coach@gymbar.app', role: 'trainer', active: true, pin: '3456', createdAt: now },
   ];
 }
 
@@ -92,18 +93,21 @@ function buildSeed(): DemoData {
   const payments: Payment[] = [];
   const checkins: CheckIn[] = [];
 
-  const people: [string, string, MemberStatus, string, number | null, MemberGoal][] = [
-    ['Ana', 'García', 'active', '+53 5 234 5678', 12, 'lose_weight'],
-    ['Carlos', 'Martínez', 'active', '+53 5 345 6789', 3, 'gain_muscle'],
-    ['Lucía', 'Fernández', 'expired', '+53 5 456 7890', -5, 'maintain'],
-    ['Miguel', 'Rodríguez', 'pending', '+53 5 567 8901', null, 'endurance'],
-    ['Sofía', 'López', 'frozen', '+53 5 678 9012', 20, 'lose_weight'],
-    ['Diego', 'Hernández', 'active', '+53 5 789 0123', 45, 'gain_muscle'],
-    ['Valentina', 'Torres', 'expired', '+53 5 890 1234', -18, 'maintain'],
-    ['Mateo', 'Ramírez', 'active', '+53 5 901 2345', 8, 'endurance'],
-  ];
+  // El 7.º campo es el entrenador asignado (id de staff). 'demo-trainer' deja
+  // ver la vista de "mis clientes" al iniciar sesión como Entrenador (PIN 3456).
+  const people: [string, string, MemberStatus, string, number | null, MemberGoal, string | null][] =
+    [
+      ['Ana', 'García', 'active', '+53 5 234 5678', 12, 'lose_weight', 'demo-trainer'],
+      ['Carlos', 'Martínez', 'active', '+53 5 345 6789', 3, 'gain_muscle', null],
+      ['Lucía', 'Fernández', 'expired', '+53 5 456 7890', -5, 'maintain', null],
+      ['Miguel', 'Rodríguez', 'pending', '+53 5 567 8901', null, 'endurance', null],
+      ['Sofía', 'López', 'frozen', '+53 5 678 9012', 20, 'lose_weight', 'demo-trainer'],
+      ['Diego', 'Hernández', 'active', '+53 5 789 0123', 45, 'gain_muscle', 'demo-trainer'],
+      ['Valentina', 'Torres', 'expired', '+53 5 890 1234', -18, 'maintain', null],
+      ['Mateo', 'Ramírez', 'active', '+53 5 901 2345', 8, 'endurance', 'demo-trainer'],
+    ];
 
-  for (const [firstName, lastName, status, phone, daysToEnd, goal] of people) {
+  for (const [firstName, lastName, status, phone, daysToEnd, goal, trainerId] of people) {
     const memberId = uid();
     let currentMembershipId: string | null = null;
     let membershipEndDate: Date | null = null;
@@ -155,6 +159,7 @@ function buildSeed(): DemoData {
       email: null,
       photoUrl: null,
       goal,
+      trainerId,
       notes: null,
       status,
       currentMembershipId,

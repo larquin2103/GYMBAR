@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Building2, Check } from 'lucide-react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Building2, Check, ImagePlus, Trash2, Dumbbell } from 'lucide-react';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { Card, CardBody } from '@/shared/ui/Card';
 import { Button } from '@/shared/ui/Button';
 import { Field, Input } from '@/shared/ui/Field';
 import { cn } from '@/shared/lib/cn';
+import { resizeImageToDataUrl } from '@/shared/lib/image';
 import { useOrgSettings, useUpdateOrgSettings } from '../api/useSettings';
 
 const CURRENCIES = [
@@ -20,9 +21,11 @@ export default function SettingsPage() {
   const [currency, setCurrency] = useState('CUP');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [kioskBlock, setKioskBlock] = useState(true);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (settings) {
@@ -30,9 +33,23 @@ export default function SettingsPage() {
       setCurrency(settings.currency);
       setPhone(settings.phone ?? '');
       setAddress(settings.address ?? '');
+      setLogoUrl(settings.logoUrl ?? null);
       setKioskBlock(settings.kioskBlockExpired);
     }
   }, [settings]);
+
+  async function pickLogo(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    try {
+      // Se reduce a ~128px y se comprime para que quepa en el doc de Firestore.
+      setLogoUrl(await resizeImageToDataUrl(file, 128));
+    } catch {
+      setError('No se pudo procesar la imagen. Prueba con otra.');
+    }
+  }
 
   async function onSave() {
     setError(null);
@@ -42,6 +59,7 @@ export default function SettingsPage() {
         currency,
         phone: phone.trim() || null,
         address: address.trim() || null,
+        logoUrl,
         kioskBlockExpired: kioskBlock,
       });
       setSaved(true);
@@ -59,6 +77,48 @@ export default function SettingsPage() {
         <div className="text-sm text-content-muted">Cargando…</div>
       ) : (
         <div className="max-w-2xl space-y-5">
+          <Card>
+            <CardBody>
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-content">
+                <ImagePlus className="h-4 w-4 text-content-muted" />
+                Logo del gimnasio
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo del gimnasio" className="h-full w-full object-contain" />
+                  ) : (
+                    <Dumbbell className="h-7 w-7 text-content-muted" aria-hidden />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <input
+                    ref={logoRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={pickLogo}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" size="sm" type="button" onClick={() => logoRef.current?.click()}>
+                      <ImagePlus className="h-4 w-4" />
+                      {logoUrl ? 'Cambiar logo' : 'Subir logo'}
+                    </Button>
+                    {logoUrl && (
+                      <Button variant="ghost" size="sm" type="button" onClick={() => setLogoUrl(null)}>
+                        <Trash2 className="h-4 w-4" />
+                        Quitar
+                      </Button>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-xs text-content-muted">
+                    Se guarda reducido en la nube. Recuerda pulsar «Guardar cambios».
+                  </p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
           <Card>
             <CardBody>
               <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-content">

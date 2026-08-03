@@ -21,6 +21,19 @@ export function useMembers(params: { search?: string; status?: MemberStatus }) {
   });
 }
 
+/**
+ * Clientes asignados a un entrenador (módulo de Medidas). trainerId null =
+ * todos (vista de admin/recepción).
+ */
+export function useMembersForTrainer(trainerId: string | null) {
+  const { organizationId } = useSession();
+  const repo = getMemberRepository();
+  return useQuery({
+    queryKey: memberKeys.byTrainer(organizationId, trainerId),
+    queryFn: () => repo.listForTrainer(organizationId, trainerId),
+  });
+}
+
 /** Un cliente por id. */
 export function useMember(id: string | undefined) {
   const { organizationId } = useSession();

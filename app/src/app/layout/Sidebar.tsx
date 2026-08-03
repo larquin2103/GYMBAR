@@ -15,17 +15,25 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { role, organizationName } = useSession();
   const { data: settings } = useOrgSettings();
   const gymName = settings?.name ?? organizationName;
+  const logoUrl = settings?.logoUrl ?? null;
   const items = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-surface">
       <div className="flex h-16 items-center gap-2.5 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-contrast">
-          <Dumbbell className="h-5 w-5" />
-        </div>
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt={gymName}
+            className="h-9 w-9 shrink-0 rounded-md object-contain"
+          />
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-contrast">
+            <Dumbbell className="h-5 w-5" />
+          </div>
+        )}
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-content">{gymName}</div>
-          <div className="text-xs text-content-muted">GYMBAR</div>
+          <div className="truncate text-sm font-semibold leading-tight text-content">{gymName}</div>
         </div>
       </div>
 

@@ -40,6 +40,7 @@ export function buildNewMember(params: {
     email: input.email ? input.email.trim() : null,
     photoUrl,
     goal: input.goal ?? null,
+    trainerId: input.trainerId?.trim() || null,
     notes: input.notes?.trim() || null,
     status: 'pending',
     currentMembershipId: null,

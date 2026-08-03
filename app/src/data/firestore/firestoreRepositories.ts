@@ -363,6 +363,7 @@ export class FirestoreOrganizationRepository implements OrganizationRepository {
       currency: x.currency ?? 'CUP',
       phone: x.phone ?? null,
       address: x.address ?? null,
+      logoUrl: x.logoUrl ?? null,
       kioskBlockExpired: x.kioskBlockExpired ?? true,
     };
   }

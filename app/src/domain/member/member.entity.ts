@@ -17,6 +17,8 @@ export interface Member {
   email: string | null;
   photoUrl: string | null;
   goal: MemberGoal | null;
+  /** Usuario interno (entrenador) responsable del cliente. Null = sin asignar. */
+  trainerId: string | null;
   notes: string | null;
   // Campos derivados (mantenidos por Cloud Functions en producción).
   status: MemberStatus;

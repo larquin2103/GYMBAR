@@ -55,7 +55,10 @@ export function Shell() {
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="absolute -right-10 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md bg-bg text-content-muted"
+              className={cn(
+                'absolute -right-10 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md bg-bg text-content-muted transition-opacity',
+                mobileOpen ? 'opacity-100' : 'opacity-0',
+              )}
               aria-label="Cerrar menú"
             >
               <X className="h-4 w-4" />

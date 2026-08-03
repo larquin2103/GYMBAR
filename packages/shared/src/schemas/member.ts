@@ -29,6 +29,8 @@ export const NewMemberSchema = z.object({
     .regex(/^\d{4}$/, 'El PIN debe ser de 4 dígitos')
     .optional()
     .or(z.literal('')),
+  /** Id del usuario interno (entrenador) al que se asigna el cliente. '' = sin asignar. */
+  trainerId: z.string().max(80).optional().or(z.literal('')),
   notes: z.string().max(2000).optional(),
 });
 export type NewMember = z.infer<typeof NewMemberSchema>;

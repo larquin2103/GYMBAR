@@ -10,6 +10,7 @@ import { Button } from '@/shared/ui/Button';
 import { Field, Input, Textarea } from '@/shared/ui/Field';
 import { Avatar } from '@/shared/ui/Avatar';
 import { cn } from '@/shared/lib/cn';
+import { useStaff } from '@/features/settings/api/useStaff';
 import { useCreateMember, useUpdateMember } from '../api/useMemberMutations';
 
 interface MemberSheetProps {
@@ -24,6 +25,8 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
   const isEdit = !!member;
   const create = useCreateMember();
   const update = useUpdateMember();
+  const { data: staff } = useStaff();
+  const trainers = (staff ?? []).filter((s) => s.role === 'trainer' && s.active);
   const fileRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(member?.photoUrl ?? null);
@@ -45,6 +48,7 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
       email: member?.email ?? '',
       goal: member?.goal ?? undefined,
       accessCode: member?.accessCode ?? '',
+      trainerId: member?.trainerId ?? '',
       notes: member?.notes ?? '',
     },
   });
@@ -163,6 +167,29 @@ export function MemberSheet({ open, onClose, member, onCreated }: MemberSheetPro
             ))}
           </div>
         </div>
+
+        <Field
+          label="Entrenador asignado"
+          htmlFor="trainerId"
+          hint={
+            trainers.length === 0
+              ? 'Crea un usuario con rol Entrenador en Usuarios para poder asignarlo.'
+              : 'El entrenador verá la evolución de este cliente en Medidas.'
+          }
+        >
+          <select
+            id="trainerId"
+            className="h-10 w-full rounded-md border border-border bg-bg px-3 text-sm text-content"
+            {...register('trainerId')}
+          >
+            <option value="">Sin asignar</option>
+            {trainers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.displayName}
+              </option>
+            ))}
+          </select>
+        </Field>
 
         <Field
           label="PIN de autoservicio (4 dígitos)"

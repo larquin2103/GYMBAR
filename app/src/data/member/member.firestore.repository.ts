@@ -80,6 +80,18 @@ export class FirestoreMemberRepository implements MemberRepository {
     };
   }
 
+  async listForTrainer(orgId: string, trainerId: string | null): Promise<Member[]> {
+    // Con trainerId: igualdad simple (índice de un solo campo, automático), se
+    // ordena en cliente. Sin trainerId: todos, ordenados por nombre (cap 500).
+    const q = trainerId
+      ? fbQuery(this.membersCol(orgId), where('trainerId', '==', trainerId))
+      : fbQuery(this.membersCol(orgId), orderBy('searchName'), fbLimit(500));
+    const snap = await getDocs(q);
+    const items = snap.docs.map((d) => memberFromDoc(d.id, d.data()));
+    if (trainerId) items.sort((a, b) => a.searchName.localeCompare(b.searchName));
+    return items;
+  }
+
   async create(orgId: string, input: NewMember, photo?: Blob | null): Promise<Member> {
     const ref0 = doc(this.membersCol(orgId));
     let photoUrl: string | null = null;
@@ -128,6 +140,7 @@ export class FirestoreMemberRepository implements MemberRepository {
     if (patch.phone !== undefined) partial.phone = patch.phone.trim() || null;
     if (patch.email !== undefined) partial.email = patch.email.trim() || null;
     if (patch.goal !== undefined) partial.goal = patch.goal ?? null;
+    if (patch.trainerId !== undefined) partial.trainerId = patch.trainerId.trim() || null;
     if (patch.accessCode) {
       const existing = await this.getByAccessCode(orgId, patch.accessCode);
       if (existing && existing.id !== id) throw new Error('Ese PIN ya está en uso por otro cliente');

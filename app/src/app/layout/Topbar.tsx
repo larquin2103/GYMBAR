@@ -21,11 +21,14 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
       <button
         type="button"
         onClick={open}
-        className="flex h-9 flex-1 items-center gap-2 rounded-md border border-border bg-surface/60 px-3 text-sm text-content-muted transition-colors hover:border-primary/40 sm:max-w-md"
+        className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface/60 px-3 text-sm text-content-muted transition-colors hover:border-primary/40 sm:max-w-md"
       >
-        <Search className="h-4 w-4" aria-hidden />
-        <span>Buscar clientes o acciones…</span>
-        <kbd className="ml-auto hidden rounded border border-border px-1.5 py-0.5 text-[10px] sm:block">
+        <Search className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="truncate">
+          <span className="sm:hidden">Buscar…</span>
+          <span className="hidden sm:inline">Buscar clientes o acciones…</span>
+        </span>
+        <kbd className="ml-auto hidden shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] sm:block">
           ⌘K
         </kbd>
       </button>

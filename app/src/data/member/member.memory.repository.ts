@@ -65,6 +65,13 @@ export class InMemoryMemberRepository implements MemberRepository {
     };
   }
 
+  async listForTrainer(orgId: string, trainerId: string | null): Promise<Member[]> {
+    return this.list(orgId)
+      .filter((m) => (trainerId ? m.trainerId === trainerId : true))
+      .slice()
+      .sort((a, b) => a.searchName.localeCompare(b.searchName));
+  }
+
   private uniqueAccessCode(orgId: string): string {
     const list = this.list(orgId);
     for (let i = 0; i < 50; i++) {
@@ -116,6 +123,7 @@ export class InMemoryMemberRepository implements MemberRepository {
       phone: patch.phone !== undefined ? patch.phone.trim() || null : prev.phone,
       email: patch.email !== undefined ? patch.email.trim() || null : prev.email,
       goal: patch.goal !== undefined ? (patch.goal ?? null) : prev.goal,
+      trainerId: patch.trainerId !== undefined ? patch.trainerId.trim() || null : prev.trainerId,
       notes: patch.notes !== undefined ? patch.notes.trim() || null : prev.notes,
       updatedAt: new Date(),
     };

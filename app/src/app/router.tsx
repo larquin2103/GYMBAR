@@ -1,10 +1,8 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { Ruler } from 'lucide-react';
 import { Shell } from './layout/Shell';
 import { CommandPaletteProvider } from './layout/CommandPalette';
 import { RequireAuth } from './auth/RequireAuth';
-import { PlaceholderPage } from '@/shared/ui/PlaceholderPage';
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const CheckInPage = lazy(() => import('@/features/checkin/pages/CheckInPage'));
@@ -21,6 +19,7 @@ const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
 const RoutinesPage = lazy(() => import('@/features/routines/pages/RoutinesPage'));
 const ProductsPage = lazy(() => import('@/features/products/pages/ProductsPage'));
 const InventoryPage = lazy(() => import('@/features/products/pages/InventoryPage'));
+const MeasurementsPage = lazy(() => import('@/features/measurements/pages/MeasurementsPage'));
 
 function RootLayout() {
   return (
@@ -48,17 +47,7 @@ export const router = createBrowserRouter([
           { path: 'cashbox', element: <CashboxPage /> },
           { path: 'attendance', element: <AttendancePage /> },
           { path: 'routines', element: <RoutinesPage /> },
-          {
-            path: 'measurements',
-            element: (
-              <PlaceholderPage
-                title="Medidas"
-                description="Registro y progreso de medidas corporales"
-                icon={Ruler}
-                phase="Fase 4"
-              />
-            ),
-          },
+          { path: 'measurements', element: <MeasurementsPage /> },
           { path: 'inventory', element: <InventoryPage /> },
           { path: 'products', element: <ProductsPage /> },
           { path: 'reports', element: <ReportsPage /> },
